@@ -16,6 +16,9 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Select from '@radix-ui/react-select';
 import { motion, AnimatePresence } from 'motion/react';
 import SupplyChainIntel from './SupplyChainIntel';
+import { useProducts } from '../../hooks/useProducts';
+import { useWallet } from '../../hooks/useWallet';
+import type { Product } from '../../lib/supabase';
 
 interface FactoryDashboardProps {
   onBack: () => void;
@@ -51,21 +54,6 @@ const CATEGORIES = [
   { id: 'sweets', name: 'حلويات', icon: '🍬', color: 'pink' },
   { id: 'cleaning', name: 'مواد تنظيف', icon: '🧹', color: 'purple' },
 ];
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  unit: string;
-  quantity: number;
-  price: number;
-  barcode?: string;
-  expiryDate?: string;
-  description?: string;
-  image?: string;
-  minStock: number;
-  createdAt: string;
-}
 
 // Analytics dataset (mock)
 const revenueSeries = [
@@ -120,83 +108,36 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showCashoutDialog, setShowCashoutDialog] = useState(false);
+  const [cashoutAmount, setCashoutAmount] = useState('');
+  const [cashoutBank, setCashoutBank] = useState('بنك التضامن الإسلامي');
+  const [cashoutAccount, setCashoutAccount] = useState('•••• ٤٢٨١');
+  const [cashoutProcessing, setCashoutProcessing] = useState(false);
+  const [cashoutResult, setCashoutResult] = useState<{success?: boolean; net?: number; fee?: number; error?: string} | null>(null);
 
-  // Sample products data
-  const [products, setProducts] = useState<Product[]>([
-    {
-      id: 'P-001',
-      name: 'أرز بسمتي فاخر',
-      category: 'grains',
-      unit: 'kg',
-      quantity: 1250,
-      price: 8500,
-      barcode: '6281234567890',
-      minStock: 200,
-      description: 'أرز بسمتي درجة أولى مستورد',
-      createdAt: '2026-04-15'
-    },
-    {
-      id: 'P-002',
-      name: 'زيت نباتي',
-      category: 'oils',
-      unit: 'liter',
-      quantity: 580,
-      price: 12000,
-      barcode: '6281234567891',
-      minStock: 100,
-      expiryDate: '2027-03-20',
-      description: 'زيت نباتي مكرر 100%',
-      createdAt: '2026-04-10'
-    },
-    {
-      id: 'P-003',
-      name: 'سكر أبيض',
-      category: 'food',
-      unit: 'kg',
-      quantity: 890,
-      price: 4500,
-      barcode: '6281234567892',
-      minStock: 150,
-      description: 'سكر أبيض نقي',
-      createdAt: '2026-04-12'
-    },
-    {
-      id: 'P-004',
-      name: 'حليب مجفف',
-      category: 'dairy',
-      unit: 'carton',
-      quantity: 320,
-      price: 15000,
-      barcode: '6281234567893',
-      minStock: 50,
-      expiryDate: '2027-02-15',
-      description: 'حليب مجفف كامل الدسم',
-      createdAt: '2026-04-08'
-    },
-    {
-      id: 'P-005',
-      name: 'معكرونة سباغيتي',
-      category: 'grains',
-      unit: 'carton',
-      quantity: 450,
-      price: 6500,
-      barcode: '6281234567894',
-      minStock: 80,
-      description: 'معكرونة سباغيتي إيطالية',
-      createdAt: '2026-04-05'
-    },
-  ]);
+  // ★ SUPABASE: Live product data
+  const {
+    products, loading: productsLoading,
+    addProduct, updateProduct, deleteProduct,
+    totalProducts, totalValue, lowStockProducts, totalQuantity
+  } = useProducts();
 
-  const [formData, setFormData] = useState<Partial<Product>>({
+  // ★ SUPABASE: Live wallet data with real-time balance
+  const {
+    factory, transactions: walletTransactions, cashouts,
+    loading: walletLoading, requestCashout
+  } = useWallet();
+
+  const [formData, setFormData] = useState<Record<string, any>>({
     name: '',
     category: '',
     unit: '',
     quantity: 0,
     price: 0,
     barcode: '',
-    expiryDate: '',
+    expiry_date: '',
     description: '',
-    minStock: 0,
+    min_stock: 0,
   });
 
   // Filter products
@@ -207,46 +148,45 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
     return matchesSearch && matchesCategory;
   });
 
-  // Calculate stats
-  const totalProducts = products.length;
-  const totalValue = products.reduce((sum, p) => sum + (p.quantity * p.price), 0);
-  const lowStockProducts = products.filter(p => p.quantity <= p.minStock).length;
-  const totalQuantity = products.reduce((sum, p) => sum + p.quantity, 0);
-
-  const handleAddProduct = () => {
-    const newProduct: Product = {
-      id: `P-${String(products.length + 1).padStart(3, '0')}`,
-      name: formData.name!,
-      category: formData.category!,
-      unit: formData.unit!,
-      quantity: formData.quantity!,
-      price: formData.price!,
-      barcode: formData.barcode,
-      expiryDate: formData.expiryDate,
-      description: formData.description,
-      minStock: formData.minStock!,
-      createdAt: new Date().toISOString().split('T')[0]
-    };
-    setProducts([...products, newProduct]);
+  const handleAddProduct = async () => {
+    await addProduct({
+      name: formData.name,
+      category: formData.category,
+      unit: formData.unit,
+      quantity: formData.quantity,
+      price: formData.price,
+      barcode: formData.barcode || null,
+      expiry_date: formData.expiry_date || null,
+      description: formData.description || null,
+      min_stock: formData.min_stock,
+      image_url: null,
+    });
     setIsAddDialogOpen(false);
     resetForm();
   };
 
-  const handleEditProduct = () => {
+  const handleEditProduct = async () => {
     if (editingProduct) {
-      setProducts(products.map(p =>
-        p.id === editingProduct.id
-          ? { ...editingProduct, ...formData }
-          : p
-      ));
+      await updateProduct(editingProduct.id, {
+        name: formData.name,
+        category: formData.category,
+        unit: formData.unit,
+        quantity: formData.quantity,
+        price: formData.price,
+        barcode: formData.barcode || null,
+        expiry_date: formData.expiry_date || null,
+        description: formData.description || null,
+        min_stock: formData.min_stock,
+      });
       setEditingProduct(null);
       resetForm();
+      setIsAddDialogOpen(false);
     }
   };
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
-      setProducts(products.filter(p => p.id !== id));
+      await deleteProduct(id);
     }
   };
 
@@ -258,15 +198,43 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
       quantity: 0,
       price: 0,
       barcode: '',
-      expiryDate: '',
+      expiry_date: '',
       description: '',
-      minStock: 0,
+      min_stock: 0,
     });
+  };
+
+  // ★ CASHOUT HANDLER (3% processing fee)
+  const handleCashout = async () => {
+    const amount = parseInt(cashoutAmount.replace(/[^0-9]/g, ''));
+    if (!amount || amount <= 0) return;
+    setCashoutProcessing(true);
+    setCashoutResult(null);
+    const result = await requestCashout(amount, cashoutBank, cashoutAccount);
+    setCashoutResult(result);
+    setCashoutProcessing(false);
+    if (result.success) {
+      setTimeout(() => {
+        setShowCashoutDialog(false);
+        setCashoutAmount('');
+        setCashoutResult(null);
+      }, 3000);
+    }
   };
 
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
-    setFormData(product);
+    setFormData({
+      name: product.name,
+      category: product.category,
+      unit: product.unit,
+      quantity: product.quantity,
+      price: product.price,
+      barcode: product.barcode || '',
+      expiry_date: product.expiry_date || '',
+      description: product.description || '',
+      min_stock: product.min_stock,
+    });
     setIsAddDialogOpen(true);
   };
 
@@ -447,7 +415,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
                 {filteredProducts.map((product) => {
                   const category = getCategoryInfo(product.category);
                   const unit = getUnitInfo(product.unit);
-                  const isLowStock = product.quantity <= product.minStock;
+                  const isLowStock = product.quantity <= product.min_stock;
 
                   return (
                     <motion.div
@@ -493,7 +461,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-slate-600">الكمية المتوفرة</span>
                             <span className={`font-bold ${isLowStock ? 'text-red-600' : 'text-emerald-600'}`}>
-                              {product.quantity.toLocaleString()} {unit.symbol}
+                              {product.quantity.toLocaleString()} {unit?.symbol || product.unit}
                             </span>
                           </div>
                           <div className="flex items-center justify-between text-sm">
@@ -506,10 +474,10 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
                               <span className="text-slate-900 font-mono text-xs">{product.barcode}</span>
                             </div>
                           )}
-                          {product.expiryDate && (
+                          {product.expiry_date && (
                             <div className="flex items-center justify-between text-sm">
                               <span className="text-slate-600">تاريخ الانتهاء</span>
-                              <span className="text-slate-900 text-xs">{product.expiryDate}</span>
+                              <span className="text-slate-900 text-xs">{product.expiry_date}</span>
                             </div>
                           )}
                         </div>
@@ -934,7 +902,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              {/* Hero Balance Card */}
+              {/* Hero Balance Card — ★ LIVE from Supabase */}
               <div className="relative bg-gradient-to-l from-[#0B1B3B] via-[#13265A] to-[#1A73E8] rounded-3xl p-8 text-white overflow-hidden">
                 <div className="absolute -top-32 -left-20 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
                 <div className="absolute -bottom-32 -right-20 w-96 h-96 bg-[#1A73E8]/40 rounded-full blur-3xl" />
@@ -950,7 +918,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
                     </div>
                     <div className="text-[12px] text-white/70 mb-2 tracking-wider">الرصيد المتاح</div>
                     <div className="flex items-baseline gap-3 mb-1">
-                      <span className="text-5xl tabular-nums tracking-tight">٤٢,٨٧٥,٣٢٠</span>
+                      <span className="text-5xl tabular-nums tracking-tight">{factory ? factory.balance.toLocaleString('ar-YE') : '---'}</span>
                       <span className="text-base text-white/70">ر.ي</span>
                     </div>
                     <div className="flex items-center gap-3 text-[12px] text-white/70">
@@ -962,7 +930,10 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
                     </div>
 
                     <div className="flex flex-wrap gap-2.5 mt-6">
-                      <button className="inline-flex items-center gap-2 bg-white text-[#0B1B3B] px-4 py-2.5 rounded-xl hover:bg-white/90 transition shadow-lg shadow-black/20">
+                      <button
+                        onClick={() => setShowCashoutDialog(true)}
+                        className="inline-flex items-center gap-2 bg-white text-[#0B1B3B] px-4 py-2.5 rounded-xl hover:bg-white/90 transition shadow-lg shadow-black/20"
+                      >
                         <Download className="w-4 h-4" /> سحب فوري
                       </button>
                       <button className="inline-flex items-center gap-2 bg-white/15 backdrop-blur border border-white/20 px-4 py-2.5 rounded-xl hover:bg-white/25 transition">
@@ -984,15 +955,15 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
                           <span className="text-[11px] text-white/70">قيد التسوية</span>
                           <Clock className="w-4 h-4 text-amber-300" />
                         </div>
-                        <div className="text-xl tabular-nums">٨,٤٢٠,٠٠٠</div>
-                        <div className="text-[10px] text-white/60 mt-1">٢٣ معاملة</div>
+                        <div className="text-xl tabular-nums">{factory ? factory.pending_balance.toLocaleString('ar-YE') : '---'}</div>
+                        <div className="text-[10px] text-white/60 mt-1">{walletTransactions.filter(t => t.status === 'pending').length} معاملة</div>
                       </div>
                       <div className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[11px] text-white/70">جاهز للسحب</span>
                           <Zap className="w-4 h-4 text-emerald-300" />
                         </div>
-                        <div className="text-xl tabular-nums">٣٤,٤٥٥,٣٢٠</div>
+                        <div className="text-xl tabular-nums">{factory ? (factory.balance - factory.pending_balance).toLocaleString('ar-YE') : '---'}</div>
                         <div className="text-[10px] text-white/60 mt-1">سحب فوري</div>
                       </div>
                       <div className="bg-white/10 backdrop-blur rounded-2xl p-4 border border-white/10">
@@ -1359,6 +1330,133 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* ★ CASHOUT DIALOG — 3% processing fee */}
+      {showCashoutDialog && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm" dir="rtl">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="relative bg-gradient-to-l from-[#0B1B3B] to-[#1A73E8] p-6 text-white">
+              <button
+                onClick={() => { setShowCashoutDialog(false); setCashoutResult(null); }}
+                className="absolute top-4 left-4 p-1.5 rounded-full hover:bg-white/20 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div className="flex items-center gap-2 mb-3">
+                <Download className="w-5 h-5" />
+                <span className="text-sm tracking-wider">سحب فوري</span>
+              </div>
+              <div className="text-[11px] text-white/70 mb-1">الرصيد المتاح</div>
+              <div className="text-3xl tabular-nums">{factory?.balance.toLocaleString('ar-YE') ?? '---'} <span className="text-base text-white/70">ر.ي</span></div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {cashoutResult?.success ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-8"
+                >
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="w-8 h-8 text-emerald-600" />
+                  </div>
+                  <h3 className="text-xl text-[#0B1B3B] mb-2">تم السحب بنجاح!</h3>
+                  <p className="text-slate-500 mb-1">المبلغ المحوّل</p>
+                  <p className="text-3xl text-emerald-600 tabular-nums">{cashoutResult.net?.toLocaleString()} <span className="text-sm text-slate-400">ر.ي</span></p>
+                  <p className="text-xs text-slate-400 mt-2">رسوم المعالجة: {cashoutResult.fee?.toLocaleString()} ر.ي (3%)</p>
+                </motion.div>
+              ) : (
+                <>
+                  {/* Amount Input */}
+                  <div>
+                    <label className="text-sm text-slate-600 mb-2 block">مبلغ السحب (ر.ي)</label>
+                    <input
+                      type="text"
+                      value={cashoutAmount}
+                      onChange={(e) => setCashoutAmount(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="أدخل المبلغ..."
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-[#0B1B3B] text-lg text-center tabular-nums focus:outline-none focus:border-[#1A73E8] focus:ring-2 focus:ring-[#1A73E8]/20 transition"
+                    />
+                    {/* Quick amounts */}
+                    <div className="flex gap-2 mt-2">
+                      {[1000000, 5000000, 10000000].map(amt => (
+                        <button
+                          key={amt}
+                          onClick={() => setCashoutAmount(String(amt))}
+                          className="flex-1 py-1.5 bg-slate-100 rounded-lg text-xs text-slate-600 hover:bg-[#1A73E8]/10 hover:text-[#1A73E8] transition"
+                        >
+                          {(amt / 1000000).toFixed(0)}M
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Fee Preview */}
+                  {cashoutAmount && parseInt(cashoutAmount) > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2"
+                    >
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-600">المبلغ</span>
+                        <span className="text-[#0B1B3B] tabular-nums">{parseInt(cashoutAmount).toLocaleString()} ر.ي</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-amber-700">رسوم المعالجة (3%)</span>
+                        <span className="text-amber-700 tabular-nums">-{Math.ceil(parseInt(cashoutAmount) * 0.03).toLocaleString()} ر.ي</span>
+                      </div>
+                      <div className="border-t border-amber-200 pt-2 flex justify-between">
+                        <span className="text-sm font-medium text-[#0B1B3B]">المبلغ الصافي</span>
+                        <span className="text-lg text-emerald-600 tabular-nums">
+                          {(parseInt(cashoutAmount) - Math.ceil(parseInt(cashoutAmount) * 0.03)).toLocaleString()} ر.ي
+                        </span>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Bank Account */}
+                  <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#0B1B3B] rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm text-[#0B1B3B]">{cashoutBank}</div>
+                      <div className="text-xs text-slate-400">{cashoutAccount}</div>
+                    </div>
+                  </div>
+
+                  {cashoutResult?.error && (
+                    <div className="bg-red-50 text-red-700 text-sm p-3 rounded-xl flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      {cashoutResult.error}
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <button
+                    onClick={handleCashout}
+                    disabled={cashoutProcessing || !cashoutAmount || parseInt(cashoutAmount) <= 0}
+                    className="w-full py-4 bg-gradient-to-l from-[#0B1B3B] to-[#1A73E8] text-white rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
+                  >
+                    {cashoutProcessing ? (
+                      <><motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" /> جاري المعالجة...</>
+                    ) : (
+                      <><Zap className="w-5 h-5" /> تأكيد السحب الفوري</>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { useDriverRoute } from '../../hooks/useDriverRoute';
 
 interface DriverDashboardProps {
   onBack: () => void;
@@ -43,92 +44,28 @@ interface Trip {
 export default function DriverDashboard({ onBack }: DriverDashboardProps) {
   const [activeTab, setActiveTab] = useState('route');
   const [scanning, setScanning] = useState(false);
-  const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const [showProofDialog, setShowProofDialog] = useState(false);
+  const [confirmingDelivery, setConfirmingDelivery] = useState(false);
 
-  // Current Route
+  // ★ SUPABASE: Live route data with real-time updates
+  const {
+    driver, activeShipment, stops, currentStop: currentTask,
+    loading, confirmDelivery,
+    completedStops, totalStops, estimatedEarnings, actualEarnings
+  } = useDriverRoute();
+
+  // Keep mock data for tabs that aren't wired yet
   const route = {
-    id: 'RT-4821',
+    id: activeShipment?.shipment_number || 'RT-4821',
     efficiency: 92,
-    totalStops: 7,
-    completed: 3,
-    estimatedEarnings: 45000,
-    actualEarnings: 28000,
+    totalStops: totalStops || 7,
+    completed: completedStops || 3,
+    estimatedEarnings: estimatedEarnings || 45000,
+    actualEarnings: actualEarnings || 28000,
     distance: '45 كم',
     fuelSaved: '30%',
     eta: '2:30 ساعة',
   };
-
-  const stops: Stop[] = [
-    {
-      id: 1,
-      type: 'pickup',
-      name: 'مصنع السلوى',
-      items: '20 كرتون حليب',
-      status: 'completed',
-      location: 'صنعاء - الرقاص',
-      address: 'شارع الزبيري، بجوار مسجد النور',
-      contact: 'أحمد المدير',
-      phone: '+967 777 123 456',
-      earnings: 8000
-    },
-    {
-      id: 2,
-      type: 'pickup',
-      name: 'مصنع الحبوب',
-      items: '15 كيس أرز',
-      status: 'current',
-      location: 'صنعاء - الزراعة',
-      address: 'طريق الحديدة الرئيسي',
-      contact: 'محمد المشرف',
-      phone: '+967 777 234 567',
-      distance: '2.5 كم',
-      eta: '8 دقائق',
-      earnings: 7000
-    },
-    {
-      id: 3,
-      type: 'dropoff',
-      name: 'متجر الأمل',
-      items: '12 كرتون',
-      status: 'pending',
-      location: 'صنعاء - حدة',
-      address: 'شارع الستين، مقابل البنك',
-      contact: 'سعيد التاجر',
-      phone: '+967 777 345 678',
-      distance: '5.2 كم',
-      eta: '15 دقيقة',
-      earnings: 9000
-    },
-    {
-      id: 4,
-      type: 'dropoff',
-      name: 'سوبر ماركت النور',
-      items: '8 كرتون',
-      status: 'pending',
-      location: 'صنعاء - شميلة',
-      address: 'شارع الجزائر',
-      contact: 'خالد المالك',
-      phone: '+967 777 456 789',
-      distance: '8.7 كم',
-      eta: '22 دقيقة',
-      earnings: 11000
-    },
-    {
-      id: 5,
-      type: 'dropoff',
-      name: 'بقالة السلام',
-      items: '10 جركن زيت',
-      status: 'pending',
-      location: 'صنعاء - الحصبة',
-      address: 'شارع الحرية، بجوار المدرسة',
-      contact: 'عبدالله',
-      phone: '+967 777 567 890',
-      distance: '12.1 كم',
-      eta: '30 دقيقة',
-      earnings: 10000
-    },
-  ];
 
   // Trip History
   const tripHistory: Trip[] = [
@@ -198,8 +135,6 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
     rank: 12,
   };
 
-  const currentTask = stops.find(s => s.status === 'current');
-
   const tabs = [
     { id: 'route', label: 'المسار الحالي', icon: Navigation },
     { id: 'earnings', label: 'الأرباح', icon: DollarSign },
@@ -207,11 +142,16 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
     { id: 'stats', label: 'الإحصائيات', icon: BarChart3 },
   ];
 
-  const completeStop = () => {
-    // Logic to complete current stop
-    alert('تم إكمال النقطة بنجاح!');
-    setScanning(false);
-    setShowProofDialog(false);
+  // ★ CONFIRM DELIVERY — triggers Supabase settlement cascade
+  const completeStop = async () => {
+    if (!currentTask) return;
+    setConfirmingDelivery(true);
+    const result = await confirmDelivery(currentTask.id);
+    setConfirmingDelivery(false);
+    if (result.success) {
+      setScanning(false);
+      setShowProofDialog(false);
+    }
   };
 
   return (
@@ -385,7 +325,7 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                           </p>
                         </div>
                         <div className="bg-amber-500 px-4 py-2 rounded-lg text-slate-900 font-bold">
-                          #{currentTask.id} من {route.totalStops}
+                          #{currentTask.stop_order} من {route.totalStops}
                         </div>
                       </div>
 
@@ -395,8 +335,8 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                             <Package className="w-4 h-4 text-slate-400" />
                             <span className="text-xs text-slate-400">الموقع</span>
                           </div>
-                          <div className="text-lg mb-1">{currentTask.name}</div>
-                          <div className="text-sm text-slate-400">{currentTask.location}</div>
+                          <div className="text-lg mb-1">{currentTask.location_name}</div>
+                          <div className="text-sm text-slate-400">{currentTask.city}</div>
                         </div>
 
                         <div className="bg-slate-800/50 rounded-xl p-4">
@@ -404,8 +344,8 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                             <User className="w-4 h-4 text-slate-400" />
                             <span className="text-xs text-slate-400">جهة الاتصال</span>
                           </div>
-                          <div className="text-lg mb-1">{currentTask.contact}</div>
-                          <div className="text-sm text-slate-400">{currentTask.phone}</div>
+                          <div className="text-lg mb-1">{currentTask.contact_name}</div>
+                          <div className="text-sm text-slate-400">{currentTask.contact_phone}</div>
                         </div>
 
                         <div className="bg-slate-800/50 rounded-xl p-4">
@@ -413,7 +353,7 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                             <Box className="w-4 h-4 text-slate-400" />
                             <span className="text-xs text-slate-400">العناصر</span>
                           </div>
-                          <div className="text-lg">{currentTask.items}</div>
+                          <div className="text-lg">{currentTask.items_description}</div>
                         </div>
 
                         <div className="bg-slate-800/50 rounded-xl p-4">
@@ -435,7 +375,7 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                         </button>
 
                         <a
-                          href={`tel:${currentTask.phone}`}
+                          href={`tel:${currentTask.contact_phone}`}
                           className="bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
                         >
                           <Phone className="w-4 h-4" />
@@ -443,7 +383,7 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                         </a>
 
                         <a
-                          href={`https://maps.google.com/?q=${currentTask.location}`}
+                          href={`https://maps.google.com/?q=${currentTask.city}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl transition-colors flex items-center justify-center gap-2"
@@ -501,7 +441,6 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.1 }}
-                        onClick={() => setSelectedStop(stop)}
                         className={`rounded-xl p-4 cursor-pointer transition-all ${
                           stop.status === 'completed'
                             ? 'bg-green-500/20 border border-green-500/30'
@@ -519,14 +458,14 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                             {stop.status === 'completed' ? (
                               <CheckCircle className="w-5 h-5" />
                             ) : (
-                              <span>{stop.id}</span>
+                              <span>{stop.stop_order}</span>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between mb-1">
                               <div>
-                                <div className="text-sm font-medium mb-0.5">{stop.name}</div>
-                                <div className="text-xs text-slate-400">{stop.location}</div>
+                                <div className="text-sm font-medium mb-0.5">{stop.location_name}</div>
+                                <div className="text-xs text-slate-400">{stop.city}</div>
                               </div>
                               <span className={`px-2 py-0.5 rounded text-xs ${
                                 stop.type === 'pickup'
@@ -536,13 +475,13 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                                 {stop.type === 'pickup' ? 'استلام' : 'تسليم'}
                               </span>
                             </div>
-                            <div className="text-xs text-slate-400 mb-2">{stop.items}</div>
-                            {stop.distance && (
+                            <div className="text-xs text-slate-400 mb-2">{stop.items_description}</div>
+                            {stop.earnings > 0 && (
                               <div className="flex items-center gap-3 text-xs">
                                 <span className="text-slate-400">{stop.distance}</span>
                                 <span className="text-slate-500">•</span>
                                 <span className="text-slate-400">{stop.eta}</span>
-                                {stop.earnings && (
+                                {stop.earnings > 0 && (
                                   <>
                                     <span className="text-slate-500">•</span>
                                     <span className="text-green-400">{stop.earnings.toLocaleString()} ر.ي</span>

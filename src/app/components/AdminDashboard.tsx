@@ -11,6 +11,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Area, AreaChart
 } from 'recharts';
 import { motion, AnimatePresence } from 'motion/react';
+import { useTransactions } from '../../hooks/useTransactions';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -41,6 +42,7 @@ const SETTLEMENT_TIMES = [
 ];
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
+  const { transactions, auditLog: liveAuditLog, retailers, loading } = useTransactions();
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -85,29 +87,48 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
     { retailer: 'سوبر ماركت البركة', risk: 'منخفض', color: 'bg-green-500', score: 91, credit: 280000, used: 145000 },
   ];
 
-  const allTransactions = [
-    { id: 'TX-8821', from: 'غرفة المقاصة', to: 'مصنع الحبوب', amount: 425000, type: 'تسوية', time: 'منذ 5 دقائق', status: 'مكتمل', fee: 4250 },
-    { id: 'TX-8820', from: 'متجر الأمل', to: 'غرفة المقاصة', amount: 120000, type: 'ائتمان', time: 'منذ 12 دقيقة', status: 'مكتمل', fee: 1200 },
-    { id: 'TX-8819', from: 'غرفة المقاصة', to: 'مصنع السلوى', amount: 360000, type: 'تسوية', time: 'منذ 18 دقيقة', status: 'مكتمل', fee: 3600 },
-    { id: 'TX-8818', from: 'سوبر ماركت النور', to: 'غرفة المقاصة', amount: 95000, type: 'ائتمان', time: 'منذ 25 دقيقة', status: 'مكتمل', fee: 950 },
-    { id: 'TX-8817', from: 'غرفة المقاصة', to: 'مصنع الألبان', amount: 280000, type: 'تسوية', time: 'منذ 32 دقيقة', status: 'قيد المعالجة', fee: 2800 },
-    { id: 'TX-8816', from: 'بقالة السلام', to: 'غرفة المقاصة', amount: 75000, type: 'ائتمان', time: 'منذ 45 دقيقة', status: 'مكتمل', fee: 750 },
-    { id: 'TX-8815', from: 'غرفة المقاصة', to: 'مصنع المشروبات', amount: 520000, type: 'تسوية', time: 'منذ ساعة', status: 'مكتمل', fee: 5200 },
-    { id: 'TX-8814', from: 'محلات الفرح', to: 'غرفة المقاصة', amount: 165000, type: 'ائتمان', time: 'منذ ساعة و10 دقائق', status: 'مكتمل', fee: 1650 },
-  ];
+  const allTransactions = transactions.map(tx => {
+    let fromName = 'نظام التمويل';
+    let toName = 'حساب غير معروف';
+    if (tx.type === 'settlement') {
+      fromName = 'غرفة المقاصة';
+      toName = retailers.find(r => r.id === tx.receiver_id)?.name || 'المصنع';
+    } else if (tx.type === 'credit_usage') {
+      fromName = retailers.find(r => r.id === tx.sender_id)?.name || 'متجر';
+      toName = 'غرفة المقاصة';
+    } else if (tx.type === 'fee') {
+      fromName = 'غرفة المقاصة';
+      toName = 'رسوم المنصة';
+    } else if (tx.type === 'repayment') {
+      fromName = retailers.find(r => r.id === tx.sender_id)?.name || 'متجر';
+      toName = 'حساب التسوية';
+    }
+
+    return {
+      id: tx.id.substring(0, 8).toUpperCase(),
+      from: fromName,
+      to: toName,
+      amount: tx.amount,
+      type: tx.type === 'settlement' ? 'تسوية' : tx.type === 'credit_usage' ? 'ائتمان' : tx.type === 'fee' ? 'رسوم' : 'سداد',
+      time: new Date(tx.created_at).toLocaleString('ar-YE'),
+      status: tx.status === 'completed' ? 'مكتمل' : tx.status === 'pending' ? 'قيد المعالجة' : 'فشل',
+      fee: tx.fees_processed || 0
+    };
+  });
 
   const gmvTrend = GMV_TREND;
   const transactionTypes = TRANSACTION_TYPES;
   const settlementTimes = SETTLEMENT_TIMES;
 
   // Audit log
-  const auditLog = [
-    { id: 1, action: 'تسوية مالية', user: 'النظام الآلي', target: 'TX-8821', time: 'منذ 5 دقائق', type: 'settlement' },
-    { id: 2, action: 'موافقة ائتمان', user: 'أحمد المدير', target: 'متجر الأمل', time: 'منذ 15 دقيقة', type: 'approval' },
-    { id: 3, action: 'تحديث حد ائتماني', user: 'سارة المالية', target: 'سوبر ماركت النور', time: 'منذ 23 دقيقة', type: 'update' },
-    { id: 4, action: 'تسوية مالية', user: 'النظام الآلي', target: 'TX-8819', time: 'منذ 28 دقيقة', type: 'settlement' },
-    { id: 5, action: 'إضافة مستخدم', user: 'أحمد المدير', target: 'محمد السائق', time: 'منذ 35 دقيقة', type: 'user' },
-  ];
+  const auditLog = liveAuditLog.map(log => ({
+    id: log.id,
+    action: log.action,
+    user: log.actor_id || 'النظام الآلي',
+    target: log.target_id || '',
+    time: new Date(log.created_at).toLocaleString('ar-YE'),
+    type: log.action.includes('settlement') ? 'settlement' : 'update'
+  }));
 
   // Filter transactions
   const filteredTransactions = allTransactions.filter(tx => {

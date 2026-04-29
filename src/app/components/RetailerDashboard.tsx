@@ -8,34 +8,17 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { useMarketplace } from '../../hooks/useMarketplace';
+import { useCreditScore } from '../../hooks/useCreditScore';
+import type { MarketplaceItem } from '../../hooks/useMarketplace';
+import type { Order, CreditHistoryEntry } from '../../lib/supabase';
 
 interface RetailerDashboardProps {
   onBack: () => void;
 }
 
-interface CartItem {
-  id: number;
-  name: string;
-  factory: string;
-  price: number;
-  image: string;
-  route: string;
-  category: string;
-  unit: string;
-  quantity: number;
-  stock: number;
-  rating: number;
-}
-
-interface Order {
-  id: string;
-  date: string;
-  items: number;
-  total: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  creditUsed: number;
-  deliveryDate?: string;
-  route: string;
+interface CartItem extends MarketplaceItem {
+  cartQuantity: number;
 }
 
 export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
@@ -59,17 +42,22 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
   const toggleSection = (k: string) => setOpenSections((s) => ({ ...s, [k]: !s[k] }));
   const [groupBy, setGroupBy] = useState<'none' | 'factory' | 'category' | 'route' | 'finance'>('none');
 
-  // Credit Info
-  const creditInfo = {
-    limit: 500000,
-    used: 280000,
-    available: 220000,
-    gracePeriod: 45,
-    nextPayment: '2026-05-15',
-    paymentAmount: 150000
-  };
+  // ★ SUPABASE: Live Marketplace
+  const { items: allProducts, loading: marketLoading } = useMarketplace();
 
-  // Categories
+  // ★ SUPABASE: Live Credit Engine
+  const {
+    retailer,
+    orders,
+    creditHistory,
+    loading: creditLoading,
+    creditAvailable,
+    utilizationPct,
+    scoreBreakdown,
+    riskLevel,
+    riskColor
+  } = useCreditScore();
+
   const categories = [
     { id: 'all', name: 'الكل', icon: '📦' },
     { id: 'grains', name: 'حبوب', icon: '🌾' },
@@ -79,181 +67,38 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
     { id: 'canned', name: 'معلبات', icon: '🥫' },
   ];
 
-  // Products
-  const allProducts: CartItem[] = [
-    {
-      id: 1,
-      name: 'أرز بسمتي فاخر',
-      factory: 'مصنع الحبوب اليمني',
-      price: 8500,
-      image: '🌾',
-      route: 'المسار A',
-      category: 'grains',
-      unit: 'كيس 5 كجم',
-      quantity: 1,
-      stock: 150,
-      rating: 4.8
-    },
-    {
-      id: 2,
-      name: 'سكر أبيض نقي',
-      factory: 'مصنع التحلية',
-      price: 12000,
-      image: '🍬',
-      route: 'المسار A',
-      category: 'grains',
-      unit: 'كيس 10 كجم',
-      quantity: 1,
-      stock: 200,
-      rating: 4.5
-    },
-    {
-      id: 3,
-      name: 'طحين فاخر',
-      factory: 'مطاحن صنعاء',
-      price: 15000,
-      image: '🌾',
-      route: 'المسار B',
-      category: 'grains',
-      unit: 'كيس 25 كجم',
-      quantity: 1,
-      stock: 90,
-      rating: 4.7
-    },
-    {
-      id: 4,
-      name: 'زيت نباتي مكرر',
-      factory: 'مصنع الزيوت الوطني',
-      price: 18000,
-      image: '🫒',
-      route: 'المسار A',
-      category: 'oils',
-      unit: 'جركن 5 لتر',
-      quantity: 1,
-      stock: 120,
-      rating: 4.9
-    },
-    {
-      id: 5,
-      name: 'معكرونة سباغيتي',
-      factory: 'مصانع المكرونة',
-      price: 9500,
-      image: '🍝',
-      route: 'المسار C',
-      category: 'grains',
-      unit: 'كرتون 24 عبوة',
-      quantity: 1,
-      stock: 180,
-      rating: 4.6
-    },
-    {
-      id: 6,
-      name: 'صلصة طماطم',
-      factory: 'مصنع الصلصات',
-      price: 6500,
-      image: '🍅',
-      route: 'المسار B',
-      category: 'canned',
-      unit: 'كرتون 12 علبة',
-      quantity: 1,
-      stock: 250,
-      rating: 4.4
-    },
-    {
-      id: 7,
-      name: 'حليب مجفف كامل الدسم',
-      factory: 'مصانع الألبان',
-      price: 22000,
-      image: '🥛',
-      route: 'المسار A',
-      category: 'dairy',
-      unit: 'كرتون 12 علبة',
-      quantity: 1,
-      stock: 75,
-      rating: 4.7
-    },
-    {
-      id: 8,
-      name: 'عصير برتقال طبيعي',
-      factory: 'مصنع العصائر',
-      price: 14000,
-      image: '🥤',
-      route: 'المسار B',
-      category: 'beverages',
-      unit: 'كرتون 24 عبوة',
-      quantity: 1,
-      stock: 140,
-      rating: 4.5
-    },
-  ];
-
-  // Orders History
-  const orders: Order[] = [
-    {
-      id: 'ORD-2341',
-      date: '2026-04-25',
-      items: 5,
-      total: 125000,
-      status: 'delivered',
-      creditUsed: 125000,
-      deliveryDate: '2026-04-27',
-      route: 'المسار A'
-    },
-    {
-      id: 'ORD-2340',
-      date: '2026-04-22',
-      items: 3,
-      total: 85000,
-      status: 'shipped',
-      creditUsed: 85000,
-      deliveryDate: '2026-04-29',
-      route: 'المسار B'
-    },
-    {
-      id: 'ORD-2339',
-      date: '2026-04-18',
-      items: 7,
-      total: 180000,
-      status: 'processing',
-      creditUsed: 180000,
-      route: 'المسار A'
-    },
-    {
-      id: 'ORD-2338',
-      date: '2026-04-15',
-      items: 4,
-      total: 95000,
-      status: 'delivered',
-      creditUsed: 95000,
-      deliveryDate: '2026-04-17',
-      route: 'المسار C'
-    },
-  ];
-
-  // Credit History
-  const creditHistory = [
-    { id: 1, date: '2026-04-25', type: 'استخدام', amount: 125000, description: 'طلب ORD-2341', balance: 280000 },
-    { id: 2, date: '2026-04-20', type: 'سداد', amount: -100000, description: 'تسديد دفعة', balance: 155000 },
-    { id: 3, date: '2026-04-18', type: 'استخدام', amount: 180000, description: 'طلب ORD-2339', balance: 255000 },
-    { id: 4, date: '2026-04-15', type: 'استخدام', amount: 95000, description: 'طلب ORD-2338', balance: 75000 },
-  ];
-
-  const allFactories = Array.from(new Set(allProducts.map(p => p.factory)));
-  const allRoutes = Array.from(new Set(allProducts.map(p => p.route)));
+  const allFactories = Array.from(new Set(allProducts.map(p => p.factory_name)));
+  const allRoutes = ['المسار A', 'المسار B', 'المسار C'];
 
   // Heuristics for badges (deterministic, based on product id/route/price)
-  const isCollaborative = (p: CartItem) => p.route === 'المسار A' || p.route === 'المسار B';
-  const isFinanced = (p: CartItem) => p.price <= 18000;
-  const isInstantSettlement = (p: CartItem) => p.id % 2 === 0;
-  const routeDiscount = (p: CartItem) => (isCollaborative(p) ? 30 : 0);
+  const getProductRoute = (id: string) => {
+    // Simple deterministic mock route assignment based on string id
+    const charCode = id.charCodeAt(0) + id.charCodeAt(id.length - 1);
+    return ['المسار A', 'المسار B', 'المسار C'][charCode % 3];
+  };
+
+  const getProductImage = (category: string) => {
+    const emojis: Record<string, string> = {
+      grains: '🌾', oils: '🫒', dairy: '🥛', beverages: '🥤', food: '🍽️', canned: '🥫'
+    };
+    return emojis[category] || '📦';
+  };
+
+  const isCollaborative = (p: MarketplaceItem) => {
+    const route = getProductRoute(p.id);
+    return route === 'المسار A' || route === 'المسار B';
+  };
+  const isFinanced = (p: MarketplaceItem) => p.price <= 18000;
+  const isInstantSettlement = (p: MarketplaceItem) => p.price > 10000;
+  const routeDiscount = (p: MarketplaceItem) => (isCollaborative(p) ? 30 : 0);
 
   // Filter products
   const filteredProducts = allProducts.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.factory.toLowerCase().includes(searchQuery.toLowerCase());
+                         product.factory_name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    const matchesFactory = selectedFactories.length === 0 || selectedFactories.includes(product.factory);
-    const matchesRoute = selectedRoutes.length === 0 || selectedRoutes.includes(product.route);
+    const matchesFactory = selectedFactories.length === 0 || selectedFactories.includes(product.factory_name);
+    const matchesRoute = selectedRoutes.length === 0 || selectedRoutes.includes(getProductRoute(product.id));
     const matchesCollab = !collaborativeOnly || isCollaborative(product);
     const matchesPrice = product.price >= priceRange[0] && product.price <= priceRange[1];
     const matchesFinance = financialTags.length === 0 || financialTags.every(t => {
@@ -381,7 +226,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
             <div className="flex items-center gap-3">
               <div className="bg-white/20 backdrop-blur px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
                 <CreditCard className="w-4 h-4" />
-                <span>الحد المتاح: {creditInfo.available.toLocaleString()} ر.ي</span>
+                <span>الحد المتاح: {creditAvailable.toLocaleString()} ر.ي</span>
               </div>
               <button
                 onClick={() => setShowCartDialog(true)}
@@ -402,18 +247,18 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-white/80">استخدام الحد الائتماني</span>
               <span className="text-sm text-white">
-                {creditInfo.used.toLocaleString()} / {creditInfo.limit.toLocaleString()} ر.ي
+                {((retailer?.credit_limit || 0) - creditAvailable).toLocaleString()} / {(retailer?.credit_limit || 0).toLocaleString()} ر.ي
               </span>
             </div>
             <div className="bg-white/20 rounded-full h-2 overflow-hidden">
               <div
                 className="bg-white h-full rounded-full transition-all"
-                style={{ width: `${(creditInfo.used / creditInfo.limit) * 100}%` }}
+                style={{ width: `${utilizationPct}%` }}
               />
             </div>
             <div className="flex items-center justify-between mt-2 text-xs text-white/70">
-              <span>الدفعة القادمة: {creditInfo.nextPayment}</span>
-              <span>المبلغ: {creditInfo.paymentAmount.toLocaleString()} ر.ي</span>
+              <span>الدفعة القادمة: {new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString('ar-YE')}</span>
+              <span>المبلغ: {((retailer?.credit_limit || 0) - creditAvailable).toLocaleString()} ر.ي</span>
             </div>
           </div>
         </div>
@@ -751,9 +596,9 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                     <div className="space-y-6">
                       {(() => {
                         const groupKey = (p: CartItem): string => {
-                          if (groupBy === 'factory') return p.factory;
+                          if (groupBy === 'factory') return p.factory_name;
                           if (groupBy === 'category') return categories.find(c => c.id === p.category)?.name || p.category;
-                          if (groupBy === 'route') return p.route;
+                          if (groupBy === 'route') return getProductRoute(p.id);
                           if (groupBy === 'finance') {
                             const tags = [
                               isFinanced(p) ? 'ائتمان متاح' : null,
@@ -816,10 +661,10 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                             className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-[0_18px_40px_-20px_rgba(26,115,232,0.35)] hover:border-[#1A73E8]/30 transition-all flex flex-col"
                           >
                             <div className="h-32 bg-gradient-to-br from-slate-50 to-blue-50/40 flex items-center justify-center text-5xl relative border-b border-slate-100">
-                              <span className="opacity-90">{product.image}</span>
+                              <span className="opacity-90">{getProductImage(product.category)}</span>
                               <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 items-end">
                                 <span className="px-2 py-0.5 rounded-md text-[10px] bg-white/90 backdrop-blur text-slate-700 border border-slate-200">
-                                  {product.route}
+                                  {getProductRoute(product.id)}
                                 </span>
                                 {discount > 0 && (
                                   <span className="px-2 py-0.5 rounded-md text-[10px] bg-amber-500 text-white inline-flex items-center gap-1">
@@ -924,7 +769,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                     <div className="text-sm text-slate-600">إجمالي القيمة</div>
                   </div>
                   <div className="text-3xl text-slate-900">
-                    {(orders.reduce((sum, o) => sum + o.total, 0) / 1000).toFixed(0)}k
+                    {(orders.reduce((sum, o) => sum + o.total_amount, 0) / 1000).toFixed(0)}k
                   </div>
                 </div>
                 <div className="bg-white border border-slate-200 rounded-2xl p-6">
@@ -957,18 +802,18 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                               <div className="text-lg text-slate-900 mb-1">{order.id}</div>
                               <div className="flex items-center gap-2 text-sm text-slate-500">
                                 <Calendar className="w-4 h-4" />
-                                <span>{order.date}</span>
+                                <span>{new Date(order.created_at).toLocaleDateString('ar-YE')}</span>
                                 <span>•</span>
                                 <MapPin className="w-4 h-4" />
-                                <span>{order.route}</span>
+                                <span>{getProductRoute(order.id)}</span>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
                             <div className="text-2xl text-slate-900 mb-1">
-                              {order.total.toLocaleString()} ر.ي
+                              {(order.total_amount ?? 0).toLocaleString()} ر.ي
                             </div>
-                            <div className="text-sm text-slate-500">{order.items} منتجات</div>
+                            <div className="text-sm text-slate-500">تم الطلب</div>
                           </div>
                         </div>
                         <div className="flex items-center justify-between">
@@ -1010,7 +855,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                     <h3 className="text-sm text-blue-200">الحد الائتماني الكلي</h3>
                     <CreditCard className="w-8 h-8 text-blue-200" />
                   </div>
-                  <div className="text-4xl mb-2">{creditInfo.limit.toLocaleString()}</div>
+                  <div className="text-4xl mb-2">{(retailer?.credit_limit || 0).toLocaleString()}</div>
                   <div className="text-sm text-blue-200">ريال يمني</div>
                 </div>
                 <div className="bg-gradient-to-br from-amber-600 to-amber-600 text-white rounded-2xl p-6">
@@ -1018,9 +863,9 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                     <h3 className="text-sm text-amber-200">المستخدم</h3>
                     <TrendingUp className="w-8 h-8 text-amber-200" />
                   </div>
-                  <div className="text-4xl mb-2">{creditInfo.used.toLocaleString()}</div>
+                  <div className="text-4xl mb-2">{((retailer?.credit_limit || 0) - creditAvailable).toLocaleString()}</div>
                   <div className="text-sm text-amber-200">
-                    {((creditInfo.used / creditInfo.limit) * 100).toFixed(1)}% من الحد
+                    {utilizationPct.toFixed(1)}% من الحد
                   </div>
                 </div>
                 <div className="bg-gradient-to-br from-green-600 to-green-600 text-white rounded-2xl p-6">
@@ -1028,9 +873,9 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                     <h3 className="text-sm text-green-200">المتاح</h3>
                     <Wallet className="w-8 h-8 text-green-200" />
                   </div>
-                  <div className="text-4xl mb-2">{creditInfo.available.toLocaleString()}</div>
+                  <div className="text-4xl mb-2">{creditAvailable.toLocaleString()}</div>
                   <div className="text-sm text-green-200">
-                    {((creditInfo.available / creditInfo.limit) * 100).toFixed(1)}% متاح
+                    {(100 - utilizationPct).toFixed(1)}% متاح
                   </div>
                 </div>
               </div>
@@ -1045,13 +890,13 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                     <div>
                       <h3 className="text-lg text-slate-900 mb-1">الدفعة القادمة</h3>
                       <p className="text-sm text-slate-600">
-                        فترة سماح {creditInfo.gracePeriod} يوم • تاريخ الاستحقاق: {creditInfo.nextPayment}
-                      </p>
-                    </div>
+                      فترة سماح 45 يوم • تاريخ الاستحقاق: {new Date(new Date().setDate(new Date().getDate() + 15)).toLocaleDateString('ar-YE')}
+                    </p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl text-blue-600 mb-1">
-                      {creditInfo.paymentAmount.toLocaleString()} ر.ي
+                </div>
+                <div className="text-right">
+                  <div className="text-3xl text-blue-600 mb-1">
+                    {((retailer?.credit_limit || 0) - creditAvailable).toLocaleString()} ر.ي
                     </div>
                     <button className="text-sm text-blue-600 hover:text-blue-700">
                       سداد الآن
@@ -1078,26 +923,26 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                   <tbody className="divide-y divide-slate-200">
                     {creditHistory.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 text-sm text-slate-600">{item.date}</td>
+                        <td className="px-6 py-4 text-sm text-slate-600">{new Date(item.created_at).toLocaleDateString('ar-YE')}</td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-lg text-xs ${
-                            item.type === 'استخدام'
-                              ? 'bg-blue-100 text-blue-700'
+                            item.type === 'usage'
+                              ? 'bg-amber-100 text-amber-700'
                               : 'bg-green-100 text-green-700'
                           }`}>
-                            {item.type}
+                            {item.type === 'usage' ? 'استخدام' : 'سداد'}
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-600">{item.description}</td>
                         <td className="px-6 py-4">
                           <span className={`text-sm ${
-                            item.amount > 0 ? 'text-red-600' : 'text-green-600'
+                            item.type === 'usage' ? 'text-red-600' : 'text-green-600'
                           }`}>
-                            {item.amount > 0 ? '+' : ''}{item.amount.toLocaleString()} ر.ي
+                            {item.type === 'usage' ? '-' : '+'}{item.amount.toLocaleString()} ر.ي
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-900">
-                          {item.balance.toLocaleString()} ر.ي
+                          -
                         </td>
                       </tr>
                     ))}
@@ -1218,7 +1063,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                     <span>إتمام الطلب بالائتمان</span>
                   </button>
                   <p className="text-xs text-center text-slate-500 mt-3">
-                    فترة سماح {creditInfo.gracePeriod} يوم • بدون فوائد
+                    فترة سماح 45 يوم • بدون فوائد
                   </p>
                 </div>
               </>
@@ -1291,10 +1136,10 @@ function ProductCard({
   return (
     <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-[0_18px_40px_-20px_rgba(26,115,232,0.35)] hover:border-[#1A73E8]/30 transition-all flex flex-col">
       <div className="h-32 bg-gradient-to-br from-slate-50 to-blue-50/40 flex items-center justify-center text-5xl relative border-b border-slate-100">
-        <span className="opacity-90">{product.image}</span>
+        <span className="opacity-90">{product.image || '📦'}</span>
         <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 items-end">
           <span className="px-2 py-0.5 rounded-md text-[10px] bg-white/90 backdrop-blur text-slate-700 border border-slate-200">
-            {product.route}
+            {product.route || 'المسار A'}
           </span>
           {discount > 0 && (
             <span className="px-2 py-0.5 rounded-md text-[10px] bg-amber-500 text-white inline-flex items-center gap-1">
@@ -1310,7 +1155,7 @@ function ProductCard({
       </div>
       <div className="p-4 flex-1 flex flex-col">
         <h3 className="text-slate-900 mb-0.5 text-sm">{product.name}</h3>
-        <p className="text-[11px] text-slate-500 mb-2">{product.factory}</p>
+        <p className="text-[11px] text-slate-500 mb-2">{product.factory_name || product.factory}</p>
         <div className="flex flex-wrap gap-1 mb-3">
           {financed && (
             <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-[#1A73E8] border border-blue-100">
@@ -1336,8 +1181,8 @@ function ProductCard({
             </div>
             <div className="text-[10px] text-slate-500">{product.unit}</div>
           </div>
-          <div className={`text-[10px] ${product.stock < 100 ? 'text-red-600' : 'text-green-600'}`}>
-            {product.stock} متوفر
+          <div className={`text-[10px] ${(product.quantity ?? product.stock) < 100 ? 'text-red-600' : 'text-green-600'}`}>
+            {(product.quantity ?? product.stock)} متوفر
           </div>
         </div>
         <button
