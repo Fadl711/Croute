@@ -21,12 +21,12 @@ export function useDriverRoute(driverId: string = DEMO_DRIVER_ID) {
   // Fetch active shipment + stops
   const fetchActiveRoute = useCallback(async () => {
     setLoading(true);
-    // Get the most recent in_transit shipment for this driver
+    // Get the most recent pending or in_transit shipment for this driver
     const { data: shipment } = await supabase
       .from('shipments')
       .select('*')
       .eq('driver_id', driverId)
-      .eq('status', 'in_transit')
+      .in('status', ['pending', 'in_transit'])
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -115,6 +115,49 @@ export function useDriverRoute(driverId: string = DEMO_DRIVER_ID) {
             .from('shipments')
             .update({ status: 'delivered' })
             .eq('id', activeShipment?.id);
+
+          // ✨ TRIGGER SETTLEMENT MAGIC ✨
+          if (activeShipment) {
+            // 1. Transaction: Retailer -> Factory
+            const tx_number = `TX-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+            await supabase.from('transactions').insert({
+              tx_number,
+              from_entity: 'b1000000-0000-0000-0000-000000000001', // Retailer ID
+              to_entity: activeShipment.factory_id, // Factory ID
+              amount: activeShipment.total_amount * 0.98, // 2% platform fee
+              fee: activeShipment.total_amount * 0.02,
+              type: 'settlement',
+              status: 'completed',
+              related_shipment_id: activeShipment.id
+            });
+
+            // 2. Add amount to Factory Balance
+            const { data: factory } = await supabase.from('factories').select('balance').eq('id', activeShipment.factory_id).single();
+            if (factory) {
+              await supabase.from('factories').update({ balance: factory.balance + (activeShipment.total_amount * 0.98) }).eq('id', activeShipment.factory_id);
+            }
+
+            // 3. Update driver balance (earnings from stops)
+            const totalDriverEarnings = stops.reduce((sum, s) => sum + s.earnings, 0);
+            if (driver) {
+              await supabase.from('drivers').update({ 
+                balance: driver.balance + totalDriverEarnings,
+                total_trips: driver.total_trips + 1
+              }).eq('id', driver.id);
+            }
+
+            // 4. Update platform stats (GMV, platform_fee, total_transactions)
+            const { data: stats } = await supabase.from('platform_stats').select('*').eq('id', 1).single();
+            if (stats) {
+              await supabase.from('platform_stats').update({
+                gmv: stats.gmv + activeShipment.total_amount,
+                platform_fee_today: stats.platform_fee_today + (activeShipment.total_amount * 0.02),
+                total_transactions: stats.total_transactions + 1,
+                daily_settlements: stats.daily_settlements + 1,
+                updated_at: new Date().toISOString()
+              }).eq('id', 1);
+            }
+          }
         }
       }
 

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { useSupplyChainIntel } from '../../hooks/useSupplyChainIntel';
+import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip as LeafletTooltip } from 'react-leaflet';
 
 
 import {
@@ -110,7 +111,56 @@ export default function SupplyChainIntel() {
 
       <div className="grid grid-cols-12">
         <div className="col-span-12 lg:col-span-9 relative bg-slate-100 min-h-[460px] z-0">
-                    <div className="flex items-center justify-center h-[460px] bg-gray-200 text-gray-600" dir="rtl">تم حذف خريطة react-leaflet لعدم تثبيت المكتبة</div>
+          <MapContainer center={[15.3550, 44.1850]} zoom={13} style={{ height: '460px', width: '100%', zIndex: 0 }}>
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+            />
+            {showHeat && CITIES.map((c) => (
+              <CircleMarker
+                key={`heat-${c.id}`}
+                center={[c.lat, c.lng]}
+                radius={15 + (c.demand / 100) * 20}
+                fillColor={c.demand > 75 ? '#1A73E8' : c.demand > 45 ? '#F59E0B' : '#15803D'}
+                color="transparent"
+                fillOpacity={0.6}
+              >
+                <LeafletTooltip direction="top" opacity={1}>
+                  <div className="text-right font-bold" dir="rtl">
+                    <div className="text-[#0B1B3B] mb-1">{c.name}</div>
+                    <div className="text-xs text-slate-500">طلب: {c.demand}%</div>
+                    <div className="text-xs text-slate-500">تجار: {c.retailers}</div>
+                  </div>
+                </LeafletTooltip>
+              </CircleMarker>
+            ))}
+            {showFlow && CITIES.filter(c => c.id !== 'صنعاء' && c.id !== 'حدة').map((c) => (
+              <Polyline
+                key={`flow-${c.id}`}
+                positions={[
+                  [FACTORY.lat, FACTORY.lng],
+                  [c.lat, c.lng]
+                ]}
+                color="#1A73E8"
+                weight={3}
+                opacity={0.5}
+                dashArray="5, 10"
+              />
+            ))}
+            {/* Factory Marker */}
+            <CircleMarker
+              center={[FACTORY.lat, FACTORY.lng]}
+              radius={8}
+              fillColor="#0B1B3B"
+              color="#ffffff"
+              weight={2}
+              fillOpacity={1}
+            >
+              <LeafletTooltip permanent direction="bottom" opacity={0.9}>
+                <span className="font-bold">المصنع الرئيسي (المركز)</span>
+              </LeafletTooltip>
+            </CircleMarker>
+          </MapContainer>
         </div>
 
         <div className="col-span-12 lg:col-span-3 border-r border-slate-100 p-5 space-y-4 bg-slate-50/30">

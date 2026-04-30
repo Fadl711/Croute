@@ -73,12 +73,25 @@ export interface Order {
   id: string;
   order_number: string;
   retailer_id: string;
+  factory_id: string;
   route: string | null;
   status: string;
   total: number;
   credit_used: number;
   delivery_date: string | null;
   created_at: string;
+  // Joins
+  items?: OrderItem[];
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  // Joins
+  product?: Product;
 }
 
 export interface Shipment {
