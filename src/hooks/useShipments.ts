@@ -1,38 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase, DEMO_FACTORY_ID } from '../lib/supabase';
-import type { Shipment } from '../lib/supabase';
+import { useState, useEffect, useCallback } from "react";
+import { supabase, getActiveFactoryId } from "../lib/supabase";
+import type { Shipment } from "../lib/supabase";
 
-export function useShipments(factoryId?: string) {
+/**
+ * @param factoryId - Filter shipments by factory. Defaults to active factory.
+ * @param fetchAll  - If true, fetches ALL shipments (for Admin dashboard).
+ */
+export function useShipments(
+  factoryId: string = getActiveFactoryId(),
+  fetchAll: boolean = false
+) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchShipments = useCallback(async () => {
     setLoading(true);
     let query = supabase
-      .from('shipments')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (factoryId) {
-      query = query.eq('factory_id', factoryId);
+      .from("shipments")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    // Admin sees everything; Factory sees only its own
+    if (!fetchAll && factoryId) {
+      query = query.eq("factory_id", factoryId);
     }
 
     const { data } = await query;
-    
+
     if (data) {
       setShipments(data);
     }
     setLoading(false);
-  }, [factoryId]);
+  }, [factoryId, fetchAll]);
 
   const updateShipment = async (id: string, patch: Partial<Shipment>) => {
     const { error } = await supabase
-      .from('shipments')
+      .from("shipments")
       .update(patch)
-      .eq('id', id);
-    
+      .eq("id", id);
+
     if (error) {
-      console.error('Error updating shipment:', error);
+      console.error("Error updating shipment:", error);
       throw error;
     }
     fetchShipments();
@@ -43,14 +51,17 @@ export function useShipments(factoryId?: string) {
 
     // Subscribe to realtime changes
     const channel = supabase
-      .channel('schema-db-changes-shipments')
+      .channel("schema-db-changes-shipments")
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'shipments',
-          filter: factoryId ? `factory_id=eq.${factoryId}` : undefined,
+          event: "*",
+          schema: "public",
+          table: "shipments",
+          filter:
+            !fetchAll && factoryId
+              ? `factory_id=eq.${factoryId}`
+              : undefined,
         },
         () => {
           fetchShipments();
@@ -61,7 +72,7 @@ export function useShipments(factoryId?: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchShipments, factoryId]);
+  }, [fetchShipments, factoryId, fetchAll]);
 
   return { shipments, loading, updateShipment, refetch: fetchShipments };
 }

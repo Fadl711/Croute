@@ -455,7 +455,7 @@ export default function OrdersTab({ orders = [] }: OrdersTabProps) {
                         <div className="text-3xl font-black text-slate-900 tabular-nums">
                           {selectedOrder.total.toLocaleString()}
                           <span className="text-xs font-normal text-slate-400 mr-2 uppercase">
-                            YER
+                            ر.ي
                           </span>
                         </div>
                       </div>

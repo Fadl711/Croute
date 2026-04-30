@@ -41,28 +41,24 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
     eta: `${Math.ceil((stops.length - completedStops) * 0.5)} ساعة`,
   };
 
-  const tripHistory = [
-    { id: 'RT-4820', date: '2026-04-27', stops: 6, distance: 52, earnings: 48000, duration: '3:15', fuelSaved: 32, efficiency: 95, rating: 4.8 },
-    { id: 'RT-4819', date: '2026-04-26', stops: 5, distance: 38, earnings: 42000, duration: '2:45', fuelSaved: 28, efficiency: 89, rating: 4.9 },
-    { id: 'RT-4818', date: '2026-04-25', stops: 7, distance: 61, earnings: 55000, duration: '3:50', fuelSaved: 35, efficiency: 93, rating: 4.7 }
-  ];
+  const tripHistory: any[] = [];
 
   const earnings = {
     today: actualEarnings || 0,
-    week: 245000,
-    month: 980000,
+    week: 0,
+    month: 0,
     available: (driver?.balance || 0),
-    pending: 95000,
-    totalFuelSaved: 85000,
+    pending: driver?.pending_earnings || 0,
+    totalFuelSaved: 0,
   };
 
   const performance = {
-    totalTrips: 127,
-    totalDistance: 5430,
-    avgRating: 4.8,
-    onTimeDelivery: 96,
-    completionRate: 98,
-    rank: 12,
+    totalTrips: driver?.total_trips || 0,
+    totalDistance: driver?.total_distance || 0,
+    avgRating: driver?.avg_rating || 0,
+    onTimeDelivery: driver?.on_time_pct || 0,
+    completionRate: 0,
+    rank: driver?.rank || 0,
   };
 
   const completeStop = async () => {

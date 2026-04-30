@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Factory,
   Store,
@@ -15,6 +15,8 @@ import {
   BarChart3,
   UserCircle2,
   ArrowRight,
+  Map,
+  Activity,
 } from "lucide-react";
 import {
   setActiveFactoryId,
@@ -26,7 +28,7 @@ interface RoleSelectionProps {
   onSelectRole: (role: string) => void;
 }
 
-type RoleId = 'factory' | 'retailer' | 'driver' | 'admin';
+type RoleId = "factory" | "retailer" | "driver" | "admin";
 
 interface Role {
   id: RoleId;
@@ -47,49 +49,54 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
 
   const roles: Role[] = [
     {
-      id: 'factory',
-      title: 'المصنع',
-      tag: 'الأكثر استخداماً',
-      description: 'استلم مدفوعاتك فور الشحن وأدر توزيعك على الشبكة.',
-      cta: 'الدخول كمصنع',
+      id: "factory",
+      title: "المصنع",
+      tag: "الأكثر استخداماً",
+      description: "استلم مدفوعاتك فور الشحن وأدر توزيعك على الشبكة.",
+      cta: "الدخول كمصنع",
       icon: Factory,
-      highlights: ['رفع الشحنات', 'تتبّع المدفوعات', 'إدارة التوزيع'],
-      investor: { metric: 'هامش العمولة', value: '٢٫٤٪', sub: 'لكل تسوية' },
+      highlights: ["رفع الشحنات", "تتبّع المدفوعات", "إدارة التوزيع"],
+      investor: { metric: "هامش العمولة", value: "٢٫٤٪", sub: "لكل تسوية" },
       primary: true,
     },
     {
-      id: 'retailer',
-      title: 'التاجر',
-      description: 'اطلب البضائع بتسهيلات ائتمانية وتسليم أسرع.',
-      cta: 'الدخول كتاجر',
+      id: "retailer",
+      title: "التاجر",
+      description: "اطلب البضائع بتسهيلات ائتمانية وتسليم أسرع.",
+      cta: "الدخول كتاجر",
       icon: Store,
-      highlights: ['طلب فوري', 'ائتمان مرن', 'توصيل أسرع'],
-      investor: { metric: 'متوسط الطلب', value: '١٢٥k', sub: 'ر.ي / تاجر' },
+      highlights: ["طلب فوري", "ائتمان مرن", "توصيل أسرع"],
+      investor: { metric: "متوسط الطلب", value: "١٢٥k", sub: "ر.ي / تاجر" },
     },
     {
-      id: 'driver',
-      title: 'السائق',
-      description: 'ضاعف عوائدك عبر مسارات مُحسّنة وشحنات مجمّعة.',
-      cta: 'الدخول كسائق',
+      id: "driver",
+      title: "السائق",
+      description: "ضاعف عوائدك عبر مسارات مُحسّنة وشحنات مجمّعة.",
+      cta: "الدخول كسائق",
       icon: Truck,
-      highlights: ['تقليل الرحلات الفارغة', 'مسارات أعلى ربحًا', 'تسوية يومية'],
-      investor: { metric: 'استغلال السعة', value: '٧٨٪', sub: '+٢٢ نقطة' },
+      highlights: ["تقليل الرحلات الفارغة", "مسارات أعلى ربحًا", "تسوية يومية"],
+      investor: { metric: "استغلال السعة", value: "٧٨٪", sub: "+٢٢ نقطة" },
     },
     {
-      id: 'admin',
-      title: 'غرفة المقاصة',
-      description: 'راقب العمليات والمدفوعات والأداء اللوجستي لحظيًا.',
-      cta: 'الدخول للوحة',
+      id: "admin",
+      title: "غرفة المقاصة",
+      description: "راقب العمليات والمدفوعات لحظيًا.",
+      cta: "الدخول للوحة",
       icon: Shield,
-      highlights: ['مراقبة لحظية', 'إدارة المخاطر', 'تحليلات الأداء'],
-      investor: { metric: 'صافي التدفّق', value: '+١٨٪', sub: 'م/م' },
+      highlights: ["مراقبة لحظية", "إدارة المخاطر", "تحليلات الأداء"],
+      investor: { metric: "صافي التدفّق", value: "+١٨٪", sub: "م/م" },
     },
   ];
 
   const trust = [
-    { icon: Zap, label: 'تسوية فورية', value: '< ساعتان', sub: 'بدل ٦٠ يوم' },
-    { icon: TrendingDown, label: 'خفض الكلفة', value: '٣٠٪', sub: 'في الشحن' },
-    { icon: Network, label: 'شبكة مشتركة', value: '٤ مدن', sub: 'مسارات تشاركية' },
+    { icon: Zap, label: "تسوية فورية", value: "< ساعتان", sub: "بدل ٦٠ يوم" },
+    { icon: TrendingDown, label: "خفض الكلفة", value: "٣٠٪", sub: "في الشحن" },
+    {
+      icon: Network,
+      label: "شبكة مشتركة",
+      value: "٤ مدن",
+      sub: "مسارات تشاركية",
+    },
   ];
 
   const identities = {
@@ -100,10 +107,19 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
       { id: "a1000000-0000-0000-0000-000000000004", name: "مصنع ألبان صافي" },
     ],
     retailer: [
-      { id: "b1000000-0000-0000-0000-000000000001", name: "سوبرماركت الأمل - شملان" },
+      {
+        id: "b1000000-0000-0000-0000-000000000001",
+        name: "سوبرماركت الأمل - شملان",
+      },
       { id: "b1000000-0000-0000-0000-000000000002", name: "متاجر النور - حدة" },
-      { id: "b1000000-0000-0000-0000-000000000003", name: "بقالة السلام - الحصبة" },
-      { id: "b1000000-0000-0000-0000-000000000004", name: "مؤسسة البركة - الستين" },
+      {
+        id: "b1000000-0000-0000-0000-000000000003",
+        name: "بقالة السلام - الحصبة",
+      },
+      {
+        id: "b1000000-0000-0000-0000-000000000004",
+        name: "مؤسسة البركة - الستين",
+      },
     ],
     driver: [
       { id: "c1000000-0000-0000-0000-000000000001", name: "عبدالله الشملاني" },
@@ -120,8 +136,6 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
 
   const confirmIdentity = (id: string) => {
     if (!pickingIdentity) return;
-
-    // Save identity
     if (pickingIdentity === "factory") setActiveFactoryId(id);
     if (pickingIdentity === "retailer") setActiveRetailerId(id);
     if (pickingIdentity === "driver") setActiveDriverId(id);
@@ -136,106 +150,109 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
 
   return (
     <div
-      className="min-h-screen w-full bg-white relative overflow-hidden flex flex-col"
+      className="h-screen w-full flex flex-col xl:flex-row bg-[#0B1B3B] overflow-hidden"
       dir="rtl"
       style={{ fontFamily: '"IBM Plex Sans Arabic", system-ui, sans-serif' }}
     >
-      {/* Background accents */}
-      <div className="absolute top-[-220px] left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-[#1A73E8]/[0.07] rounded-full blur-3xl pointer-events-none" />
-      <div
-        className="absolute inset-0 opacity-[0.025] pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, #0B1B3B 1px, transparent 1px), linear-gradient(to bottom, #0B1B3B 1px, transparent 1px)',
-          backgroundSize: '56px 56px',
-        }}
-      />
+      {/* 
+        ================================================================
+        RIGHT PANEL: BRANDING (Fixed 100vh)
+        ================================================================
+      */}
+      <div className="relative w-full xl:w-[40%] h-[35vh] xl:h-screen p-6 md:p-10 lg:p-12 flex flex-col justify-between text-white shrink-0">
+        <div className="absolute top-0 left-0 w-full h-full bg-[#1A73E8]/5 pointer-events-none" />
 
-      {/* Top bar */}
-      <header className="relative px-10 pt-6 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#1A73E8] flex items-center justify-center shadow-md shadow-[#1A73E8]/25">
-            <div className="w-3.5 h-3.5 rounded-[4px] bg-white" />
-          </div>
-          <div className="leading-tight">
-            <div className="tracking-[0.22em] text-[#0B1B3B] text-[13px]">C-ROUTE</div>
-            <div className="text-[10px] text-slate-400 tracking-wider">غرفة المقاصة الذكية</div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {/* Mode toggle */}
-          <div className="flex items-center p-1 bg-slate-100 rounded-full text-[11px]">
-            <button
-              onClick={() => setMode('user')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${
-                mode === 'user' ? 'bg-white shadow-sm text-[#0B1B3B]' : 'text-slate-500'
-              }`}
-            >
-              <Eye className="w-3 h-3" />
-              عرض المستخدم
-            </button>
-            <button
-              onClick={() => setMode('investor')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all ${
-                mode === 'investor'
-                  ? 'bg-[#0B1B3B] text-white shadow-sm'
-                  : 'text-slate-500'
-              }`}
-            >
-              <BarChart3 className="w-3 h-3" />
-              عرض المستثمر
-            </button>
+        {/* Header */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[#1A73E8] flex items-center justify-center shadow-lg">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <div className="tracking-[0.15em] font-black text-lg">
+                C-ROUTE
+              </div>
+              <div className="text-[9px] text-[#1A73E8] font-bold">
+                LOGISTICS SYSTEM
+              </div>
+            </div>
           </div>
         </div>
-      </header>
 
-      {/* Hero */}
-      <section className="relative px-10 pt-10 pb-6 max-w-6xl mx-auto w-full text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 mb-5">
-          <span className="w-1 h-1 rounded-full bg-[#1A73E8]" />
-          <span className="text-[11px] tracking-wider text-[#1A73E8]">منصّة المقاصة وسلسلة الإمداد</span>
+        {/* Hero Copy */}
+        <div className="relative z-10">
+          <h1 className="text-3xl md:text-5xl font-black leading-tight mb-4">
+            البنية التشغيلية <br />
+            <span className="text-white/40">لتجارة الجملة</span>
+          </h1>
+          <p className="text-white/50 text-sm max-w-sm font-medium leading-relaxed">
+            منظومة تقنية تُوحّد سلاسل الإمداد: شحنٌ ذكي، تسوياتٌ فورية، وتمويلٌ
+            تشغيلي.
+          </p>
         </div>
-        <h1
-          className="text-[#0B1B3B] leading-[1.15] mb-3"
-          style={{ fontSize: 'clamp(1.9rem, 3.2vw, 2.8rem)', fontWeight: 600 }}
-        >
-          <span className="text-[#1A73E8]">C-Route</span> · البنية التشغيلية لتجارة الجملة في اليمن
-        </h1>
-        <p className="text-slate-500 max-w-2xl mx-auto text-[14px] leading-relaxed">
-          منظومة تقنية تُوحّد سلاسل الإمداد في دورة واحدة: شحنٌ ذكي، تسوياتٌ مالية فورية، وتمويلٌ تشغيلي. ادخل من بوابتك وابدأ العمل بكفاءة.
-        </p>
-      </section>
 
-      {/* Trust strip */}
-      <section className="relative px-10 pb-6 max-w-5xl mx-auto w-full">
-        <div className="grid grid-cols-3 gap-3">
+        {/* Stats Strip */}
+        <div className="relative z-10 grid grid-cols-3 xl:grid-cols-1 gap-3 xl:gap-4 mt-4 xl:mt-0">
           {trust.map((t) => {
             const Icon = t.icon;
             return (
               <div
                 key={t.label}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white border border-slate-100"
+                className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm"
               >
-                <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-[#1A73E8]" strokeWidth={2} />
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-[#0B1B3B] text-base">{t.value}</span>
-                    <span className="text-[11px] text-slate-500">{t.label}</span>
+                <Icon className="w-4 h-4 text-[#1A73E8]" />
+                <div className="overflow-hidden">
+                  <div className="text-sm xl:text-xl font-bold truncate">
+                    {t.value}
                   </div>
-                  <div className="text-[10px] text-slate-400">{t.sub}</div>
+                  <div className="text-[10px] text-white/40 font-bold truncate uppercase">
+                    {t.label}
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
-      </section>
+      </div>
 
-      {/* Role cards — 2x2 equal grid */}
-      <section className="relative px-10 pb-10 max-w-5xl mx-auto w-full flex-1">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+      {/* 
+        ================================================================
+        LEFT PANEL: ACTIONS (Fixed 100vh)
+        ================================================================
+      */}
+      <div className="relative w-full xl:w-[60%] h-[65vh] xl:h-screen bg-white xl:rounded-r-[2.5rem] p-6 md:p-10 lg:p-12 flex flex-col justify-between overflow-hidden shadow-2xl">
+        {/* Upper Nav */}
+        <div className="flex items-center justify-between mb-6 xl:mb-0">
+          <h2 className="text-[#0B1B3B] text-xl xl:text-2xl font-black">
+            اختر صفتك للدخول
+          </h2>
+
+          <div className="flex items-center p-1 bg-slate-100 rounded-full">
+            <button
+              onClick={() => setMode("user")}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                mode === "user"
+                  ? "bg-[#1A73E8] text-white shadow-md"
+                  : "text-slate-500"
+              }`}
+            >
+              التشغيل
+            </button>
+            <button
+              onClick={() => setMode("investor")}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                mode === "investor"
+                  ? "bg-[#0B1B3B] text-white shadow-md"
+                  : "text-slate-500"
+              }`}
+            >
+              المستثمر
+            </button>
+          </div>
+        </div>
+
+        {/* Roles Grid - Responsive Flex */}
+        <div className="flex-1 flex flex-col justify-center gap-3 xl:gap-4">
           {roles.map((role) => {
             const Icon = role.icon;
             const isPrimary = role.primary;
@@ -243,182 +260,167 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
               <motion.button
                 key={role.id}
                 onClick={() => handleEnter(role.id)}
-                whileHover={{ y: -3 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                className={`group relative text-right rounded-2xl bg-white border border-slate-200 hover:border-[#1A73E8]/50 shadow-[0_4px_18px_-12px_rgba(11,27,59,0.18)] hover:shadow-[0_24px_50px_-22px_rgba(26,115,232,0.30)] transition-all duration-300 flex flex-col p-5 overflow-hidden ${
-                  isPrimary ? 'ring-1 ring-[#1A73E8]/15' : ''
+                whileHover={{ x: -8 }}
+                className={`group relative flex items-center gap-4 p-4 xl:p-6 rounded-2xl border transition-all duration-300 ${
+                  isPrimary
+                    ? "border-[#1A73E8]/20 bg-blue-50/10 shadow-sm hover:border-[#1A73E8]"
+                    : "border-slate-100 hover:border-slate-300"
                 }`}
               >
-                {isPrimary && role.tag && (
-                  <span className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-100 text-[10px] tracking-wider text-[#1A73E8]">
-                    <Sparkles className="w-2.5 h-2.5" />
-                    {role.tag}
-                  </span>
-                )}
-
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-11 h-11 shrink-0 rounded-xl bg-blue-50 group-hover:bg-[#1A73E8] flex items-center justify-center transition-colors">
-                    <Icon
-                      className="w-5 h-5 text-[#1A73E8] group-hover:text-white transition-colors"
-                      strokeWidth={1.75}
-                    />
-                  </div>
-                  <h3 className="text-[#0B1B3B] text-[16px]">{role.title}</h3>
+                <div
+                  className={`w-12 h-12 xl:w-16 xl:h-16 shrink-0 rounded-xl flex items-center justify-center transition-colors ${
+                    isPrimary
+                      ? "bg-[#1A73E8] text-white"
+                      : "bg-slate-100 text-slate-400 group-hover:bg-[#0B1B3B] group-hover:text-white"
+                  }`}
+                >
+                  <Icon className="w-6 h-6 xl:w-8 xl:h-8" strokeWidth={1.5} />
                 </div>
 
-                <p className="text-[12.5px] text-slate-500 leading-relaxed mb-3">
-                  {role.description}
-                </p>
+                <div className="flex-1 text-right">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[#0B1B3B] font-bold xl:text-lg">
+                      {role.title}
+                    </span>
+                    {isPrimary && (
+                      <span className="bg-blue-100 text-[#1A73E8] text-[9px] px-1.5 py-0.5 rounded font-black">
+                        أساسي
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] xl:text-xs text-slate-500 font-medium leading-tight line-clamp-1 xl:line-clamp-none">
+                    {role.description}
+                  </p>
+                </div>
 
-                <AnimatePresence>
-                  {mode === 'investor' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 4 }}
-                      className="flex items-center justify-between mb-3 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <BarChart3 className="w-3 h-3 text-slate-400" />
-                        <span className="text-[10px] text-slate-500 tracking-wider">{role.investor.metric}</span>
-                      </div>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-[#1A73E8] text-[12px]">{role.investor.value}</span>
-                        <span className="text-[9px] text-slate-400">{role.investor.sub}</span>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[12px] text-[#1A73E8]">{role.cta}</span>
-                  <ArrowLeft className="w-4 h-4 text-slate-300 group-hover:text-[#1A73E8] group-hover:-translate-x-1 transition-all" />
+                {/* Status/Investor Info */}
+                <div className="hidden sm:flex items-center gap-4 border-r border-slate-100 pr-4">
+                  <AnimatePresence mode="wait">
+                    {mode === "investor" ? (
+                      <motion.div
+                        key="inv"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="text-left"
+                        dir="ltr"
+                      >
+                        <div className="text-[9px] text-[#1A73E8] font-bold">
+                          {role.investor.metric}
+                        </div>
+                        <div className="text-sm xl:text-lg font-black text-[#0B1B3B]">
+                          {role.investor.value}
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="usr"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex items-center gap-2 text-[#1A73E8] font-bold text-xs"
+                      >
+                        <span>{role.cta}</span>
+                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.button>
             );
           })}
         </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="relative px-10 py-3 flex items-center justify-between border-t border-slate-100 text-[11px] text-slate-400">
-        <span>© ٢٠٢٦ C-Route — منصّة المقاصة وسلسلة الإمداد</span>
-        <span className="hidden md:inline">صنعاء • عدن • تعز • الحديدة</span>
-      </footer>
+        {/* Footer */}
+        <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+          <div>© 2026 C-Route Systems</div>
+          <div className="flex gap-4">
+            <span className="text-[#1A73E8]">Status: Online</span>
+            <span>Region: Yemen</span>
+          </div>
+        </div>
+      </div>
 
-      {/* Identity Picker Modal */}
+      {/* Identity Modal */}
       <AnimatePresence>
         {pickingIdentity && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-[#0B1B3B]/40 backdrop-blur-md flex items-center justify-center p-6"
+            className="fixed inset-0 z-[60] bg-[#0B1B3B]/80 backdrop-blur-sm flex items-center justify-center p-6"
             onClick={() => setPickingIdentity(null)}
           >
             <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden border border-slate-200"
+              className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
             >
-              <div className="p-8 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
-                <div>
-                  <h3 className="text-2xl font-black text-[#0B1B3B] mb-1">
-                    اختر الحساب
-                  </h3>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
-                    Select Test Identity
-                  </p>
-                </div>
+              <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                <h3 className="text-xl font-black text-[#0B1B3B]">
+                  اختر الحساب
+                </h3>
                 <button
                   onClick={() => setPickingIdentity(null)}
-                  className="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center text-slate-400 transition-colors"
+                  className="text-slate-400 hover:text-slate-600"
                 >
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
-
-              <div className="p-8 space-y-3 max-h-[60vh] overflow-y-auto">
+              <div className="p-4 space-y-2 max-h-[50vh] overflow-y-auto">
                 {identities[pickingIdentity].map((identity) => (
                   <button
                     key={identity.id}
                     onClick={() => confirmIdentity(identity.id)}
-                    className="w-full group flex items-center justify-between p-5 rounded-2xl border border-slate-100 hover:border-[#1A73E8] hover:bg-blue-50/30 transition-all text-right"
+                    className="w-full flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-[#1A73E8] hover:bg-blue-50/50 transition-all text-right"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-[#1A73E8] flex items-center justify-center transition-colors">
-                        <UserCircle2 className="w-6 h-6 text-slate-400 group-hover:text-white" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:text-[#1A73E8]">
+                        <UserCircle2 className="w-6 h-6" />
                       </div>
-                      <div>
-                        <div className="font-bold text-[#0B1B3B]">
-                          {identity.name}
-                        </div>
-                        <div className="text-[10px] text-slate-400 tabular-nums">
-                          ID: {identity.id.split("-")[0]}...
-                        </div>
+                      <div className="font-bold text-[#0B1B3B] text-sm">
+                        {identity.name}
                       </div>
                     </div>
-                    <ArrowLeft className="w-4 h-4 text-slate-300 group-hover:text-[#1A73E8] group-hover:-translate-x-1 transition-all" />
+                    <ArrowLeft className="w-4 h-4 text-slate-300" />
                   </button>
                 ))}
-              </div>
-
-              <div className="p-8 bg-slate-50/50 text-center">
-                <p className="text-[10px] text-slate-400 leading-relaxed">
-                  هذا النظام تجريبي للمسابقة، يمكنك التبديل بين الحسابات لاختبار
-                  التكامل بين الأطراف.
-                </p>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Entering overlay */}
+      {/* Entering Loader */}
       <AnimatePresence>
         {entering && enteringRole && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-[#0B1B3B]/85 backdrop-blur-sm flex items-center justify-center px-6"
+            className="fixed inset-0 z-[70] bg-[#0B1B3B] flex flex-col items-center justify-center p-6 text-center"
           >
             <motion.div
-              initial={{ scale: 0.95, y: 12, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.98, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-              className="bg-white rounded-2xl p-8 max-w-md w-full text-center shadow-2xl"
-              dir="rtl"
+              animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="w-20 h-20 rounded-2xl bg-[#1A73E8] flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(26,115,232,0.4)]"
             >
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-[#1A73E8] flex items-center justify-center mb-4">
-                <enteringRole.icon className="w-7 h-7 text-white" strokeWidth={1.75} />
-              </div>
-              <div className="text-[11px] tracking-[0.25em] text-slate-400 mb-1">جارٍ الدخول</div>
-              <h3 className="text-[#0B1B3B] mb-1 text-xl">بصفة {enteringRole.title}</h3>
-              <p className="text-sm text-slate-500 mb-5">يمكنك من هنا:</p>
-              <div className="flex flex-col gap-2 mb-6">
-                {enteringRole.highlights.map((h) => (
-                  <div
-                    key={h}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50/60 border border-blue-100 text-sm text-[#0B1B3B]"
-                  >
-                    <CheckCircle className="w-4 h-4 text-[#1A73E8]" />
-                    <span>{h}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 2, ease: 'easeInOut' }}
-                  className="h-full bg-[#1A73E8]"
-                />
-              </div>
+              <enteringRole.icon className="w-10 h-10 text-white" />
             </motion.div>
+            <h3 className="text-white text-2xl font-black mb-2">
+              بوابة {enteringRole.title}
+            </h3>
+            <p className="text-white/40 text-xs font-bold tracking-[0.3em] uppercase mb-8">
+              Establishing Secure Connection
+            </p>
+            <div className="w-48 h-1 bg-white/10 rounded-full overflow-hidden">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 2 }}
+                className="h-full bg-[#1A73E8]"
+              />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

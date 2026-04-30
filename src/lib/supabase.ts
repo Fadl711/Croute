@@ -82,6 +82,7 @@ export interface Order {
   created_at: string;
   // Joins
   items?: OrderItem[];
+  order_items?: OrderItem[];
 }
 
 export interface OrderItem {

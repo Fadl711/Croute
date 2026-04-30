@@ -126,46 +126,84 @@ export function useDriverRoute(driverId: string = getActiveDriverId()) {
             .update({ status: 'delivered' })
             .eq('id', activeShipment?.id);
 
-          // ✨ TRIGGER SETTLEMENT MAGIC ✨
+          // ✨ TRIGGER SETTLEMENT ✨
           if (activeShipment) {
+            // Find the actual retailer who placed the order for this shipment
+            const { data: relatedOrder } = await supabase
+              .from('orders')
+              .select('retailer_id')
+              .eq('factory_id', activeShipment.factory_id)
+              .in('status', ['approved', 'in_transit'])
+              .limit(1)
+              .single();
+
+            const actualRetailerId = relatedOrder?.retailer_id || 'unknown';
+
             // 1. Transaction: Retailer -> Factory
             const tx_number = `TX-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
             await supabase.from('transactions').insert({
               tx_number,
-              from_entity: 'b1000000-0000-0000-0000-000000000001', // Retailer ID
-              to_entity: activeShipment.factory_id, // Factory ID
-              amount: activeShipment.total_amount * 0.98, // 2% platform fee
+              from_entity: actualRetailerId,
+              to_entity: activeShipment.factory_id,
+              amount: activeShipment.total_amount * 0.98,
               fee: activeShipment.total_amount * 0.02,
               type: 'settlement',
               status: 'completed',
-              related_shipment_id: activeShipment.id
+              related_shipment_id: activeShipment.id,
             });
 
             // 2. Add amount to Factory Balance
-            const { data: factory } = await supabase.from('factories').select('balance').eq('id', activeShipment.factory_id).single();
+            const { data: factory } = await supabase
+              .from('factories')
+              .select('balance')
+              .eq('id', activeShipment.factory_id)
+              .single();
             if (factory) {
-              await supabase.from('factories').update({ balance: factory.balance + (activeShipment.total_amount * 0.98) }).eq('id', activeShipment.factory_id);
+              await supabase
+                .from('factories')
+                .update({ balance: factory.balance + activeShipment.total_amount * 0.98 })
+                .eq('id', activeShipment.factory_id);
             }
 
-            // 3. Update driver balance (earnings from stops)
+            // 3. Update driver balance
             const totalDriverEarnings = stops.reduce((sum, s) => sum + s.earnings, 0);
             if (driver) {
-              await supabase.from('drivers').update({ 
-                balance: driver.balance + totalDriverEarnings,
-                total_trips: driver.total_trips + 1
-              }).eq('id', driver.id);
+              await supabase
+                .from('drivers')
+                .update({
+                  balance: driver.balance + totalDriverEarnings,
+                  total_trips: driver.total_trips + 1,
+                })
+                .eq('id', driver.id);
             }
 
-            // 4. Update platform stats (GMV, platform_fee, total_transactions)
-            const { data: stats } = await supabase.from('platform_stats').select('*').eq('id', 1).single();
+            // 4. Update platform stats
+            const { data: stats } = await supabase
+              .from('platform_stats')
+              .select('*')
+              .eq('id', 1)
+              .single();
             if (stats) {
-              await supabase.from('platform_stats').update({
-                gmv: stats.gmv + activeShipment.total_amount,
-                platform_fee_today: stats.platform_fee_today + (activeShipment.total_amount * 0.02),
-                total_transactions: stats.total_transactions + 1,
-                daily_settlements: stats.daily_settlements + 1,
-                updated_at: new Date().toISOString()
-              }).eq('id', 1);
+              await supabase
+                .from('platform_stats')
+                .update({
+                  gmv: stats.gmv + activeShipment.total_amount,
+                  platform_fee_today: stats.platform_fee_today + activeShipment.total_amount * 0.02,
+                  total_transactions: stats.total_transactions + 1,
+                  daily_settlements: stats.daily_settlements + 1,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', 1);
+            }
+
+            // 5. ✅ Sync order status → 'delivered'
+            if (relatedOrder) {
+              await supabase
+                .from('orders')
+                .update({ status: 'delivered' })
+                .eq('factory_id', activeShipment.factory_id)
+                .eq('retailer_id', actualRetailerId)
+                .in('status', ['approved', 'in_transit']);
             }
           }
         }
