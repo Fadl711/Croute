@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { ShoppingCart, X, Truck, Minus, Plus, Trash2, CreditCard } from 'lucide-react';
-import type { CartItem } from '../RetailerDashboard';
+import type { CartItem } from './RetailerDashboard';
 import { getProductImage } from './utils';
 
 interface CartDialogProps {

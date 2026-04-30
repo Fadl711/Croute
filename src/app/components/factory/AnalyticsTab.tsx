@@ -7,7 +7,7 @@ import {
   AreaChart, Area, BarChart, Bar, RadialBarChart, RadialBar, PieChart, Pie,
   Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid
 } from 'recharts';
-import SupplyChainIntel from '../SupplyChainIntel';
+import SupplyChainIntel from './SupplyChainIntel';
 import { revenueSeries, productMix, topProducts, geoData, activityFeed, alerts } from './constants';
 
 function KpiCard({

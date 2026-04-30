@@ -3,14 +3,14 @@ import {
   Globe, DollarSign, Activity, Bell, Settings, BarChart3, PieChart, FileText, Wallet, AlertTriangle, ChevronLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useTransactions } from '../../hooks/useTransactions';
+import { useTransactions } from '../../../hooks/useTransactions';
 
 // Modular Components
-import OverviewTab from './admin/OverviewTab';
-import TransactionsTab from './admin/TransactionsTab';
-import RiskTab from './admin/RiskTab';
-import AdminAnalyticsTab from './admin/AdminAnalyticsTab';
-import AuditTab from './admin/AuditTab';
+import OverviewTab from './OverviewTab';
+import TransactionsTab from './TransactionsTab';
+import RiskTab from './RiskTab';
+import AdminAnalyticsTab from './AdminAnalyticsTab';
+import AuditTab from './AuditTab';
 
 interface AdminDashboardProps {
   onBack: () => void;

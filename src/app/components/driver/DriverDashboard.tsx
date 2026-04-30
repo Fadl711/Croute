@@ -4,12 +4,12 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
-import { useDriverRoute } from '../../hooks/useDriverRoute';
+import { useDriverRoute } from '../../../hooks/useDriverRoute';
 
 // Modular Components
-import RouteTab from './driver/RouteTab';
-import EarningsTab from './driver/EarningsTab';
-import { HistoryTab, StatsTab } from './driver/HistoryTab';
+import RouteTab from './RouteTab';
+import EarningsTab from './EarningsTab';
+import { HistoryTab, StatsTab } from './HistoryTab';
 
 interface DriverDashboardProps {
   onBack: () => void;

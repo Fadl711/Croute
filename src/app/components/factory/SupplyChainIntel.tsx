@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { useSupplyChainIntel } from '../../hooks/useSupplyChainIntel';
-import { MapContainer, TileLayer, CircleMarker, Polyline, Tooltip as LeafletTooltip } from 'react-leaflet';
-
+import { useSupplyChainIntel } from '../../../hooks/useSupplyChainIntel';
 
 import {
   MapPin, Truck, Factory as FactoryIcon, Activity, Layers,
@@ -110,57 +108,79 @@ export default function SupplyChainIntel() {
       </div>
 
       <div className="grid grid-cols-12">
-        <div className="col-span-12 lg:col-span-9 relative bg-slate-100 min-h-[460px] z-0">
-          <MapContainer center={[15.3550, 44.1850]} zoom={13} style={{ height: '460px', width: '100%', zIndex: 0 }}>
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
-            />
-            {showHeat && CITIES.map((c) => (
-              <CircleMarker
-                key={`heat-${c.id}`}
-                center={[c.lat, c.lng]}
-                radius={15 + (c.demand / 100) * 20}
-                fillColor={c.demand > 75 ? '#1A73E8' : c.demand > 45 ? '#F59E0B' : '#15803D'}
-                color="transparent"
-                fillOpacity={0.6}
-              >
-                <LeafletTooltip direction="top" opacity={1}>
-                  <div className="text-right font-bold" dir="rtl">
-                    <div className="text-[#0B1B3B] mb-1">{c.name}</div>
-                    <div className="text-xs text-slate-500">طلب: {c.demand}%</div>
-                    <div className="text-xs text-slate-500">تجار: {c.retailers}</div>
-                  </div>
-                </LeafletTooltip>
-              </CircleMarker>
-            ))}
-            {showFlow && CITIES.filter(c => c.id !== 'صنعاء' && c.id !== 'حدة').map((c) => (
-              <Polyline
-                key={`flow-${c.id}`}
-                positions={[
-                  [FACTORY.lat, FACTORY.lng],
-                  [c.lat, c.lng]
-                ]}
-                color="#1A73E8"
-                weight={3}
-                opacity={0.5}
-                dashArray="5, 10"
-              />
-            ))}
-            {/* Factory Marker */}
-            <CircleMarker
-              center={[FACTORY.lat, FACTORY.lng]}
-              radius={8}
-              fillColor="#0B1B3B"
-              color="#ffffff"
-              weight={2}
-              fillOpacity={1}
-            >
-              <LeafletTooltip permanent direction="bottom" opacity={0.9}>
-                <span className="font-bold">المصنع الرئيسي (المركز)</span>
-              </LeafletTooltip>
-            </CircleMarker>
-          </MapContainer>
+        <div className="col-span-12 lg:col-span-9 relative bg-gradient-to-br from-slate-100 to-slate-200 min-h-[460px] z-0 overflow-hidden">
+          {/* SVG-based Map Simulation */}
+          <svg className="w-full h-[460px]" viewBox="0 0 600 460" preserveAspectRatio="xMidYMid slice">
+            {/* Background grid */}
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#CBD5E1" strokeWidth="0.5" opacity="0.5" />
+              </pattern>
+            </defs>
+            <rect width="600" height="460" fill="url(#grid)" />
+
+            {/* Flow lines from factory to cities */}
+            {showFlow && CITIES.filter(c => c.id !== 'صنعاء' && c.id !== 'حدة').map((c, i) => {
+              const fx = 300, fy = 200;
+              const cx = 100 + (i * 120) % 500;
+              const cy = 100 + (i * 80) % 350;
+              return (
+                <motion.line
+                  key={`flow-${c.id}`}
+                  x1={fx} y1={fy} x2={cx} y2={cy}
+                  stroke="#1A73E8"
+                  strokeWidth="2"
+                  strokeDasharray="8,4"
+                  opacity={0.5}
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.5, delay: i * 0.2 }}
+                />
+              );
+            })}
+
+            {/* City circles (heat map) */}
+            {showHeat && CITIES.map((c, i) => {
+              const cx = 100 + (i * 120) % 500;
+              const cy = 100 + (i * 80) % 350;
+              const r = 20 + (c.demand / 100) * 30;
+              const color = c.demand > 75 ? '#1A73E8' : c.demand > 45 ? '#F59E0B' : '#15803D';
+              return (
+                <g key={`heat-${c.id}`}
+                  onMouseEnter={() => setHovered(c.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  className="cursor-pointer"
+                >
+                  <motion.circle
+                    cx={cx} cy={cy} r={r}
+                    fill={color} fillOpacity={0.25}
+                    initial={{ r: 0 }}
+                    animate={{ r }}
+                    transition={{ duration: 0.5, delay: i * 0.1 }}
+                  />
+                  <motion.circle
+                    cx={cx} cy={cy} r={r * 0.6}
+                    fill={color} fillOpacity={0.5}
+                    initial={{ r: 0 }}
+                    animate={{ r: r * 0.6 }}
+                    transition={{ duration: 0.5, delay: i * 0.1 + 0.1 }}
+                  />
+                  <text x={cx} y={cy + 4} textAnchor="middle" fontSize="11" fill="#0B1B3B" fontWeight="bold" direction="rtl">{c.name}</text>
+                  {hovered === c.id && (
+                    <g>
+                      <rect x={cx - 55} y={cy - r - 45} width="110" height="38" rx="8" fill="#0B1B3B" fillOpacity="0.9" />
+                      <text x={cx} y={cy - r - 28} textAnchor="middle" fontSize="10" fill="white">{`طلب: ${c.demand}%`}</text>
+                      <text x={cx} y={cy - r - 14} textAnchor="middle" fontSize="10" fill="#94A3B8">{`تجار: ${c.retailers}`}</text>
+                    </g>
+                  )}
+                </g>
+              );
+            })}
+
+            {/* Factory marker */}
+            <circle cx={300} cy={200} r={12} fill="#0B1B3B" stroke="#ffffff" strokeWidth="3" />
+            <text x={300} y={230} textAnchor="middle" fontSize="10" fill="#0B1B3B" fontWeight="bold">المصنع الرئيسي</text>
+          </svg>
         </div>
 
         <div className="col-span-12 lg:col-span-3 border-r border-slate-100 p-5 space-y-4 bg-slate-50/30">

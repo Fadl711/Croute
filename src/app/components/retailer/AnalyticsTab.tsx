@@ -1,8 +1,9 @@
 import { motion } from 'motion/react';
-import { TrendingUp, TrendingDown, Clock, Calendar, BarChart3, ArrowUpRight, DollarSign, Award, Target } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, Calendar, BarChart3, ArrowUpRight, DollarSign, Award, Target, Zap } from 'lucide-react';
 import type { Order, CreditHistoryEntry } from '../../../lib/supabase';
 
 interface AnalyticsTabProps {
+  retailer: any;
   creditAvailable: number;
   utilizationPct: number;
   scoreBreakdown: any;
@@ -13,7 +14,7 @@ interface AnalyticsTabProps {
 }
 
 export default function AnalyticsTab(props: AnalyticsTabProps) {
-  const { creditAvailable, utilizationPct, scoreBreakdown, riskLevel, riskColor, orders, creditHistory } = props;
+  const { retailer, creditAvailable, utilizationPct, scoreBreakdown, riskLevel, riskColor, orders, creditHistory } = props;
 
   return (
     <motion.div
@@ -48,7 +49,7 @@ export default function AnalyticsTab(props: AnalyticsTabProps) {
               {riskLevel}
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 tabular-nums">٨٤٢</div>
+          <div className="text-2xl font-black text-slate-900 tabular-nums">{retailer?.credit_score || 0}</div>
           <div className="text-xs text-slate-400 font-medium">مؤشر الجدارة الائتمانية</div>
         </div>
 
@@ -81,7 +82,7 @@ export default function AnalyticsTab(props: AnalyticsTabProps) {
               <div className="flex items-center justify-between mb-8">
                 <div>
                   <h3 className="text-xl font-bold mb-1">تفاصيل النطاق الائتماني</h3>
-                  <p className="text-white/50 text-xs">تحليل ذكاء اصطناعي بناءً على سلوكك الشرائي والسداد</p>
+                  <p className="text-white/50 text-xs">تحليل دقيق بناءً على سلوكك الشرائي والسداد الفعلي</p>
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-black">{utilizationPct}%</div>
@@ -93,7 +94,13 @@ export default function AnalyticsTab(props: AnalyticsTabProps) {
                 {Object.entries(scoreBreakdown).map(([key, value]: [string, any]) => (
                   <div key={key}>
                     <div className="flex justify-between text-xs mb-2">
-                      <span className="text-white/70">{key === 'paymentHistory' ? 'تاريخ السداد' : key === 'utilization' ? 'معدل الاستخدام' : key === 'consistency' ? 'الانتظام في الطلب' : 'عمر الحساب'}</span>
+                      <span className="text-white/70">
+                        {key === 'paymentTimeliness' ? 'الالتزام بالمواعيد' : 
+                         key === 'utilizationHealth' ? 'صحة الاستخدام' : 
+                         key === 'orderFrequency' ? 'تكرار الطلبات' : 
+                         key === 'accountAge' ? 'عمر الحساب' : 
+                         'التقييم العام'}
+                      </span>
                       <span className="font-bold">{value}%</span>
                     </div>
                     <div className="h-2 bg-white/10 rounded-full overflow-hidden">
@@ -163,24 +170,23 @@ export default function AnalyticsTab(props: AnalyticsTabProps) {
           </div>
 
           <div className="bg-white border border-slate-200 p-6 rounded-3xl shadow-sm">
-            <h4 className="font-bold text-slate-900 mb-4">مواعيد السداد القادمة</h4>
+            <h4 className="font-bold text-slate-900 mb-4">موعد السداد القادم</h4>
             <div className="space-y-4">
-              {[1, 2].map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
+              {retailer?.next_payment_date ? (
+                <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-slate-100 rounded-xl text-slate-500">
                     <Calendar className="w-4 h-4" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs font-bold text-slate-800">دفعة مصنع {i === 0 ? 'روابي' : 'الهناء'}</div>
-                    <div className="text-[10px] text-slate-400">متبقي ٣ أيام</div>
+                    <div className="text-xs font-bold text-slate-800">قسط التمويل الجاري</div>
+                    <div className="text-[10px] text-slate-400">{new Date(retailer.next_payment_date).toLocaleDateString('ar-YE')}</div>
                   </div>
-                  <div className="text-xs font-bold text-red-500">٥٬٠٠٠ ر.ي</div>
+                  <div className="text-xs font-bold text-red-500">{(retailer.next_payment_amount || 0).toLocaleString()} ر.ي</div>
                 </div>
-              ))}
+              ) : (
+                <div className="text-center py-4 text-xs text-slate-400">لا توجد دفعات مستحقة حالياً</div>
+              )}
             </div>
-            <button className="w-full mt-6 py-3 border-2 border-slate-100 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors">
-              عرض كامل التقويم
-            </button>
           </div>
         </div>
       </div>

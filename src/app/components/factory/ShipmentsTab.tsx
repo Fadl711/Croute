@@ -6,9 +6,10 @@ interface ShipmentsTabProps {
   shipments: Shipment[];
   incomingOrders: Order[];
   onAcceptOrder: (orderId: string) => void;
+  onRejectOrder: (orderId: string) => void;
 }
 
-export default function ShipmentsTab({ shipments, incomingOrders, onAcceptOrder }: ShipmentsTabProps) {
+export default function ShipmentsTab({ shipments, incomingOrders, onAcceptOrder, onRejectOrder }: ShipmentsTabProps) {
   return (
     <motion.div
       key="shipments"
@@ -72,6 +73,12 @@ export default function ShipmentsTab({ shipments, incomingOrders, onAcceptOrder 
                   >
                     <PackageCheck className="w-4 h-4" />
                     اعتماد الطلب وتجهيز الشحنة
+                  </button>
+                  <button 
+                    onClick={() => onRejectOrder(order.id)}
+                    className="w-full mt-2 bg-red-50 text-red-600 py-2 rounded-xl text-[10px] font-bold hover:bg-red-100 transition-all border border-red-100"
+                  >
+                    إلغاء الطلب
                   </button>
                 </div>
               </div>

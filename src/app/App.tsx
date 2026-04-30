@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import RoleSelection from './components/RoleSelection';
-import RetailerDashboard from './components/RetailerDashboard';
-import FactoryDashboard from './components/FactoryDashboard';
-import DriverDashboard from './components/DriverDashboard';
-import AdminDashboard from './components/AdminDashboard';
+import RetailerDashboard from './components/retailer/RetailerDashboard';
+import FactoryDashboard from './components/factory/FactoryDashboard';
+import DriverDashboard from './components/driver/DriverDashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
 
 export default function App() {
   const [selectedRole, setSelectedRole] = useState<string | null>(null);

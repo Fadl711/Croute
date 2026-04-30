@@ -12,9 +12,9 @@ export function useOrders(factoryId?: string, retailerId?: string) {
       .from('orders')
       .select(`
         *,
-        items:order_items(
+        order_items (
           *,
-          product:products(*)
+          products (*)
         )
       `);
     

@@ -3,21 +3,21 @@ import {
   Package, Truck, BarChart3, Wallet, ChevronLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useProducts } from '../../hooks/useProducts';
-import { useWallet } from '../../hooks/useWallet';
-import { useShipments } from '../../hooks/useShipments';
-import { useOrders } from '../../hooks/useOrders';
-import { supabase, DEMO_FACTORY_ID, DEMO_DRIVER_ID } from '../../lib/supabase';
-import type { Product } from '../../lib/supabase';
+import { useProducts } from '../../../hooks/useProducts';
+import { useWallet } from '../../../hooks/useWallet';
+import { useShipments } from '../../../hooks/useShipments';
+import { useOrders } from '../../../hooks/useOrders';
+import { supabase, DEMO_FACTORY_ID, DEMO_DRIVER_ID } from '../../../lib/supabase';
+import type { Product } from '../../../lib/supabase';
 
 // Modular Components
-import { CATEGORIES, UNITS } from './factory/constants';
-import ProductsTab from './factory/ProductsTab';
-import ShipmentsTab from './factory/ShipmentsTab';
-import AnalyticsTab from './factory/AnalyticsTab';
-import WalletTab from './factory/WalletTab';
-import AddProductModal from './factory/AddProductModal';
-import CashoutModal from './factory/CashoutModal';
+import { CATEGORIES, UNITS } from './constants';
+import ProductsTab from './ProductsTab';
+import ShipmentsTab from './ShipmentsTab';
+import AnalyticsTab from './AnalyticsTab';
+import WalletTab from './WalletTab';
+import AddProductModal from './AddProductModal';
+import CashoutModal from './CashoutModal';
 
 interface FactoryDashboardProps {
   onBack: () => void;
@@ -47,7 +47,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
   // Wallet, Shipments & Orders State
   const { factory, transactions: walletTransactions, requestCashout } = useWallet();
   const { shipments } = useShipments();
-  const { incomingOrders, updateOrderStatus } = useOrders();
+  const { incomingOrders, updateOrderStatus } = useOrders(factory?.id || DEMO_FACTORY_ID);
   const [showCashoutDialog, setShowCashoutDialog] = useState(false);
 
   // Derived KPIs for Analytics
@@ -177,6 +177,12 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
     alert('تم قبول الطلب وتجهيز الشحنة ومسار السائق بنجاح!');
   };
 
+  const handleRejectOrder = async (orderId: string) => {
+    if (!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
+    await updateOrderStatus(orderId, 'cancelled');
+    alert('تم إلغاء الطلب بنجاح.');
+  };
+
   // Helper Info
   const getCategoryInfo = (categoryId: string) => CATEGORIES.find(c => c.id === categoryId) || CATEGORIES[0];
   const getUnitInfo = (unitId: string) => UNITS.find(u => u.id === unitId) || UNITS[0];
@@ -296,6 +302,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
                 shipments={shipments} 
                 incomingOrders={incomingOrders}
                 onAcceptOrder={handleAcceptOrder}
+                onRejectOrder={handleRejectOrder}
               />
             )}
 

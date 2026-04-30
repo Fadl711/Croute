@@ -2,23 +2,23 @@ import { useState, useMemo } from 'react';
 import {
   LayoutDashboard, ShoppingBag, History, Wallet as WalletIcon,
   Bell, User, Settings, LogOut, Search,
-  Menu, X, Sparkles, Filter, TrendingUp
+  Menu, X, Sparkles, Filter, TrendingUp, CheckCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { useMarketplace } from '../../hooks/useMarketplace';
-import { useOrders } from '../../hooks/useOrders';
-import { useCreditScore } from '../../hooks/useCreditScore';
-import type { MarketplaceItem } from '../../hooks/useMarketplace';
-import type { Order, CreditHistoryEntry } from '../../lib/supabase';
+import { useMarketplace } from '../../../hooks/useMarketplace';
+import { useOrders } from '../../../hooks/useOrders';
+import { useCreditScore } from '../../../hooks/useCreditScore';
+import type { MarketplaceItem } from '../../../hooks/useMarketplace';
+import type { Order, CreditHistoryEntry } from '../../../lib/supabase';
 
 // Modular Components
-import MarketTab from './retailer/MarketTab';
-import AnalyticsTab from './retailer/AnalyticsTab';
-import WalletTab from './retailer/WalletTab';
-import OrdersTab from './retailer/OrdersTab';
-import CartDialog from './retailer/CartDialog';
-import FilterSidebar from './retailer/FilterSidebar';
-import { toggleInArray, getProductImage } from './retailer/utils';
+import MarketTab from './MarketTab';
+import AnalyticsTab from './AnalyticsTab';
+import WalletTab from './WalletTab';
+import OrdersTab from './OrdersTab';
+import CartDialog from './CartDialog';
+import FilterSidebar from './FilterSidebar';
+import { toggleInArray, getProductImage } from './utils';
 
 interface RetailerDashboardProps {
   onBack: () => void;
@@ -34,6 +34,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
   const [showCartDialog, setShowCartDialog] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -206,8 +207,11 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
 
       setCart([]);
       setShowCartDialog(false);
-      setActiveTab('orders');
-      alert('تم إرسال الطلبات بنجاح إلى المصانع! يمكنك تتبعها من تبويب مشترياتي.');
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setActiveTab('orders');
+      }, 3000);
     } catch (error) {
       console.error('Checkout error:', error);
       alert('حدث خطأ أثناء إتمام الطلب. يرجى المحاولة مرة أخرى.');
@@ -254,6 +258,17 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                 );
               })}
             </div>
+
+            {/* Mobile Filter Toggle (Only on Market) */}
+            {activeTab === 'market' && (
+              <button 
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold"
+              >
+                <Filter className="w-4 h-4" />
+                تصفية {activeFilterCount > 0 && `(${activeFilterCount})`}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -283,15 +298,17 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters - Only show on market tab */}
           {activeTab === 'market' && (
-            <FilterSidebar 
-              {...{
-                searchQuery, setSearchQuery, openSections, toggleSection,
-                allFactories, selectedFactories, setSelectedFactories,
-                allProducts, allRoutes, selectedRoutes, setSelectedRoutes,
-                collaborativeOnly, setCollaborativeOnly, financialTags, setFinancialTags,
-                priceRange, setPriceRange, activeFilterCount, resetFilters, toggleInArray
-              }}
-            />
+            <div className={`${mobileMenuOpen ? 'block' : 'hidden'} lg:block`}>
+              <FilterSidebar 
+                {...{
+                  searchQuery, setSearchQuery, openSections, toggleSection,
+                  allFactories, selectedFactories, setSelectedFactories,
+                  allProducts, allRoutes, selectedRoutes, setSelectedRoutes,
+                  collaborativeOnly, setCollaborativeOnly, financialTags, setFinancialTags,
+                  priceRange, setPriceRange, activeFilterCount, resetFilters, toggleInArray
+                }}
+              />
+            </div>
           )}
 
           <div className="flex-1">
@@ -313,6 +330,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
               {activeTab === 'analytics' && (
                 <AnalyticsTab 
                   {...{
+                    retailer,
                     creditAvailable, utilizationPct, scoreBreakdown, riskLevel, riskColor,
                     orders, creditHistory
                   }}
@@ -320,7 +338,10 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
               )}
 
               {activeTab === 'wallet' && (
-                <WalletTab />
+                <WalletTab 
+                  creditLimit={retailer?.credit_limit || 0}
+                  creditUsed={retailer?.credit_used || 0}
+                />
               )}
             </AnimatePresence>
           </div>
@@ -348,7 +369,64 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
         </div>
       </motion.button>
 
-      {/* Cart Dialog */}
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 z-50 flex items-center justify-between shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+        {[
+          { id: 'market', label: 'السوق', icon: ShoppingBag },
+          { id: 'orders', label: 'مشترياتي', icon: History },
+          { id: 'analytics', label: 'التحليلات', icon: TrendingUp },
+          { id: 'wallet', label: 'المحفظة', icon: WalletIcon },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-col items-center gap-1 px-3 transition-all ${
+                active ? 'text-[#1A73E8]' : 'text-slate-400'
+              }`}
+            >
+              <Icon className={`w-5 h-5 ${active ? 'animate-pulse' : ''}`} />
+              <span className="text-[10px] font-bold">{tab.label}</span>
+              {active && <motion.div layoutId="mobileTab" className="w-1 h-1 bg-[#1A73E8] rounded-full" />}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Success Overlay */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-[#0B1B3B]/90 backdrop-blur-md flex items-center justify-center p-6 text-center"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl"
+            >
+              <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/20">
+                <CheckCircle className="w-10 h-10 text-white" />
+              </div>
+              <h3 className="text-2xl font-black text-[#0B1B3B] mb-2">تم الطلب بنجاح!</h3>
+              <p className="text-slate-500 text-sm mb-6">تم إرسال طلباتك إلى المصانع وجاري التجهيز حالياً.</p>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 3 }}
+                  className="h-full bg-emerald-500"
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <CartDialog 
         {...{
           isOpen: showCartDialog,
