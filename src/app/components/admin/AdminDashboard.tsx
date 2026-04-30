@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import {
-  Globe, DollarSign, Activity, Bell, Settings, BarChart3, PieChart, FileText, Wallet, AlertTriangle, ChevronLeft
+  Globe, DollarSign, Activity, Bell, Settings, BarChart3, PieChart, FileText, Wallet, AlertTriangle, ChevronLeft,
+  Package, GitMerge
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTransactions } from '../../../hooks/useTransactions';
+import { useShipments } from '../../../hooks/useShipments';
+import { useDrivers } from '../../../hooks/useDrivers';
 
 // Modular Components
 import OverviewTab from './OverviewTab';
@@ -11,6 +14,8 @@ import TransactionsTab from './TransactionsTab';
 import RiskTab from './RiskTab';
 import AdminAnalyticsTab from './AdminAnalyticsTab';
 import AuditTab from './AuditTab';
+import ShipmentsTab from './ShipmentsTab';
+import ConsolidationTab from './ConsolidationTab';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -41,7 +46,9 @@ const SETTLEMENT_TIMES = [
 ];
 
 export default function AdminDashboard({ onBack }: AdminDashboardProps) {
-  const { transactions, auditLog: liveAuditLog, retailers, loading } = useTransactions();
+  const { transactions, auditLog: liveAuditLog, retailers, loading: transactionsLoading } = useTransactions();
+  const { shipments, loading: shipmentsLoading, updateShipment } = useShipments();
+  const { drivers, loading: driversLoading } = useDrivers();
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -126,6 +133,8 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
 
   const tabs = [
     { id: 'overview', label: 'نظرة عامة', icon: BarChart3 },
+    { id: 'shipments', label: 'الشحنات', icon: Package },
+    { id: 'consolidation', label: 'دمج المسارات', icon: GitMerge },
     { id: 'transactions', label: 'المعاملات', icon: Wallet },
     { id: 'risk', label: 'إدارة المخاطر', icon: AlertTriangle },
     { id: 'analytics', label: 'التحليلات', icon: PieChart },
@@ -145,7 +154,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <span className="text-2xl font-black tracking-tight">C-ROUTE <span className="text-blue-500">ADMIN</span></span>
             </div>
 
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden md:flex items-center gap-1 overflow-x-auto pb-1 max-w-[800px]">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const active = activeTab === tab.id;
@@ -153,7 +162,7 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl transition-all font-bold text-sm ${
+                    className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl transition-all font-bold text-sm shrink-0 ${
                       active ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900'
                     }`}
                   >
@@ -191,25 +200,44 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       <main className="max-w-[1600px] mx-auto px-6 py-10">
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
-            <OverviewTab stats={stats} gmvTrend={GMV_TREND} />
+            <OverviewTab key="overview" stats={stats} gmvTrend={GMV_TREND} />
+          )}
+
+          {activeTab === 'shipments' && (
+            <ShipmentsTab 
+              key="shipments"
+              shipments={shipments} 
+              loading={shipmentsLoading} 
+              updateShipment={updateShipment}
+            />
+          )}
+
+          {activeTab === 'consolidation' && (
+            <ConsolidationTab 
+              key="consolidation"
+              shipments={shipments} 
+              drivers={drivers} 
+              updateShipment={updateShipment}
+            />
           )}
 
           {activeTab === 'transactions' && (
             <TransactionsTab 
+              key="transactions"
               {...{ searchQuery, setSearchQuery, filterType, setFilterType, showFilters, setShowFilters, paginatedTransactions, currentPage, setCurrentPage, totalPages }}
             />
           )}
 
           {activeTab === 'risk' && (
-            <RiskTab riskMap={riskMap} />
+            <RiskTab key="risk" riskMap={riskMap} />
           )}
 
           {activeTab === 'analytics' && (
-            <AdminAnalyticsTab transactionTypes={TRANSACTION_TYPES} settlementTimes={SETTLEMENT_TIMES} />
+            <AdminAnalyticsTab key="analytics" transactionTypes={TRANSACTION_TYPES} settlementTimes={SETTLEMENT_TIMES} />
           )}
 
           {activeTab === 'audit' && (
-            <AuditTab auditLog={auditLog} />
+            <AuditTab key="audit" auditLog={auditLog} />
           )}
         </AnimatePresence>
       </main>

@@ -1,6 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase, DEMO_FACTORY_ID, DEMO_RETAILER_ID } from '../lib/supabase';
-import type { Order, OrderItem } from '../lib/supabase';
+import { useState, useEffect, useCallback } from "react";
+import {
+  supabase,
+  getActiveFactoryId,
+  getActiveRetailerId,
+} from "../lib/supabase";
+import type { Order, OrderItem } from "../lib/supabase";
 
 export function useOrders(factoryId?: string, retailerId?: string) {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -19,12 +23,12 @@ export function useOrders(factoryId?: string, retailerId?: string) {
       `);
     
     if (factoryId) {
-      query = query.eq('factory_id', factoryId).eq('status', 'pending_factory');
+      query = query.eq("factory_id", factoryId).eq("status", "pending_factory");
     } else if (retailerId) {
-      query = query.eq('retailer_id', retailerId);
+      query = query.eq("retailer_id", retailerId);
     } else {
-      // Default to demo retailer if nothing provided
-      query = query.eq('retailer_id', DEMO_RETAILER_ID);
+      // Default to dynamic active ID
+      query = query.eq("retailer_id", getActiveRetailerId());
     }
 
     const { data } = await query.order('created_at', { ascending: false });
@@ -38,7 +42,9 @@ export function useOrders(factoryId?: string, retailerId?: string) {
   useEffect(() => {
     fetchOrders();
 
-    const filter = factoryId ? `factory_id=eq.${factoryId}` : `retailer_id=eq.${retailerId || DEMO_RETAILER_ID}`;
+    const filter = factoryId
+      ? `factory_id=eq.${factoryId}`
+      : `retailer_id=eq.${retailerId || getActiveRetailerId()}`;
 
     const channel = supabase
       .channel('schema-db-changes-orders')
@@ -67,12 +73,12 @@ export function useOrders(factoryId?: string, retailerId?: string) {
     
     // 1. Insert order
     const { data: order, error: orderError } = await supabase
-      .from('orders')
+      .from("orders")
       .insert({
         ...orderData,
         order_number,
-        retailer_id: orderData.retailer_id || DEMO_RETAILER_ID,
-        status: 'pending_factory',
+        retailer_id: orderData.retailer_id || getActiveRetailerId(),
+        status: "pending_factory",
       })
       .select()
       .single();

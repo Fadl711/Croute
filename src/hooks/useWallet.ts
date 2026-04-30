@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase, DEMO_FACTORY_ID } from '../lib/supabase';
-import type { Factory, Transaction, CashoutRequest } from '../lib/supabase';
+import { useState, useEffect, useCallback } from "react";
+import { supabase, getActiveFactoryId } from "../lib/supabase";
+import type { Factory, Transaction, CashoutRequest } from "../lib/supabase";
 
-export function useWallet(factoryId: string = DEMO_FACTORY_ID) {
+export function useWallet(factoryId: string = getActiveFactoryId()) {
   const [factory, setFactory] = useState<Factory | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [cashouts, setCashouts] = useState<CashoutRequest[]>([]);

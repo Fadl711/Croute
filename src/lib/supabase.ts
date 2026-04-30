@@ -179,8 +179,22 @@ export interface PlatformStats {
 }
 
 // ═══════════════════════════════════════════
-// Demo Factory ID (for Role Switcher)
+// Demo IDs & Identity Helpers
 // ═══════════════════════════════════════════
-export const DEMO_FACTORY_ID = 'a1000000-0000-0000-0000-000000000001';
-export const DEMO_RETAILER_ID = 'b1000000-0000-0000-0000-000000000001';
-export const DEMO_DRIVER_ID = 'c1000000-0000-0000-0000-000000000001';
+export const DEMO_FACTORY_ID = "a1000000-0000-0000-0000-000000000001";
+export const DEMO_RETAILER_ID = "b1000000-0000-0000-0000-000000000001";
+export const DEMO_DRIVER_ID = "c1000000-0000-0000-0000-000000000001";
+
+export const getActiveFactoryId = () =>
+  localStorage.getItem("active_factory_id") || DEMO_FACTORY_ID;
+export const getActiveRetailerId = () =>
+  localStorage.getItem("active_retailer_id") || DEMO_RETAILER_ID;
+export const getActiveDriverId = () =>
+  localStorage.getItem("active_driver_id") || DEMO_DRIVER_ID;
+
+export const setActiveFactoryId = (id: string) =>
+  localStorage.setItem("active_factory_id", id);
+export const setActiveRetailerId = (id: string) =>
+  localStorage.setItem("active_retailer_id", id);
+export const setActiveDriverId = (id: string) =>
+  localStorage.setItem("active_driver_id", id);

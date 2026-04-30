@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase, DEMO_DRIVER_ID } from '../lib/supabase';
-import type { Driver, Shipment, RouteStop } from '../lib/supabase';
+import { useState, useEffect, useCallback } from "react";
+import { supabase, getActiveDriverId } from "../lib/supabase";
+import type { Driver, Shipment, RouteStop } from "../lib/supabase";
 
-export function useDriverRoute(driverId: string = DEMO_DRIVER_ID) {
+export function useDriverRoute(driverId: string = getActiveDriverId()) {
   const [driver, setDriver] = useState<Driver | null>(null);
   const [activeShipment, setActiveShipment] = useState<Shipment | null>(null);
   const [stops, setStops] = useState<RouteStop[]>([]);
@@ -18,27 +18,37 @@ export function useDriverRoute(driverId: string = DEMO_DRIVER_ID) {
     if (data) setDriver(data);
   }, [driverId]);
 
-  // Fetch active shipment + stops
+  // Fetch active route (multiple shipments consolidated)
   const fetchActiveRoute = useCallback(async () => {
     setLoading(true);
-    // Get the most recent pending or in_transit shipment for this driver
-    const { data: shipment } = await supabase
+    // Get all pending or in_transit shipments for this driver
+    const { data: shipmentsData } = await supabase
       .from('shipments')
       .select('*')
       .eq('driver_id', driverId)
       .in('status', ['pending', 'in_transit'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .order('created_at', { ascending: false });
 
-    if (shipment) {
-      setActiveShipment(shipment);
+    if (shipmentsData && shipmentsData.length > 0) {
+      // For now, we take the most recent one as the "Primary" for context
+      setActiveShipment(shipmentsData[0]);
+      
+      const shipmentIds = shipmentsData.map(s => s.id);
+      
       const { data: routeStops } = await supabase
         .from('route_stops')
         .select('*')
-        .eq('shipment_id', shipment.id)
+        .in('shipment_id', shipmentIds)
         .order('stop_order', { ascending: true });
-      if (routeStops) setStops(routeStops);
+      
+      if (routeStops) {
+        // Group stops: Pickups first, then Dropoffs? 
+        // For the MVP, we just show them in the order they were created/ordered
+        setStops(routeStops);
+      }
+    } else {
+      setActiveShipment(null);
+      setStops([]);
     }
     setLoading(false);
   }, [driverId]);

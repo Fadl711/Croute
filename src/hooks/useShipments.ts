@@ -2,23 +2,41 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase, DEMO_FACTORY_ID } from '../lib/supabase';
 import type { Shipment } from '../lib/supabase';
 
-export function useShipments(factoryId: string = DEMO_FACTORY_ID) {
+export function useShipments(factoryId?: string) {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchShipments = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase
+    let query = supabase
       .from('shipments')
       .select('*')
-      .eq('factory_id', factoryId)
       .order('created_at', { ascending: false });
+    
+    if (factoryId) {
+      query = query.eq('factory_id', factoryId);
+    }
+
+    const { data } = await query;
     
     if (data) {
       setShipments(data);
     }
     setLoading(false);
   }, [factoryId]);
+
+  const updateShipment = async (id: string, patch: Partial<Shipment>) => {
+    const { error } = await supabase
+      .from('shipments')
+      .update(patch)
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Error updating shipment:', error);
+      throw error;
+    }
+    fetchShipments();
+  };
 
   useEffect(() => {
     fetchShipments();
@@ -32,7 +50,7 @@ export function useShipments(factoryId: string = DEMO_FACTORY_ID) {
           event: '*',
           schema: 'public',
           table: 'shipments',
-          filter: `factory_id=eq.${factoryId}`,
+          filter: factoryId ? `factory_id=eq.${factoryId}` : undefined,
         },
         () => {
           fetchShipments();
@@ -45,5 +63,5 @@ export function useShipments(factoryId: string = DEMO_FACTORY_ID) {
     };
   }, [fetchShipments, factoryId]);
 
-  return { shipments, loading, refetch: fetchShipments };
+  return { shipments, loading, updateShipment, refetch: fetchShipments };
 }

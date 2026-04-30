@@ -13,7 +13,14 @@ import {
   CheckCircle,
   Eye,
   BarChart3,
-} from 'lucide-react';
+  UserCircle2,
+  ArrowRight,
+} from "lucide-react";
+import {
+  setActiveFactoryId,
+  setActiveRetailerId,
+  setActiveDriverId,
+} from "../../lib/supabase";
 
 interface RoleSelectionProps {
   onSelectRole: (role: string) => void;
@@ -34,8 +41,9 @@ interface Role {
 }
 
 export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
-  const [mode, setMode] = useState<'user' | 'investor'>('user');
+  const [mode, setMode] = useState<"user" | "investor">("user");
   const [entering, setEntering] = useState<RoleId | null>(null);
+  const [pickingIdentity, setPickingIdentity] = useState<RoleId | null>(null);
 
   const roles: Role[] = [
     {
@@ -84,10 +92,44 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
     { icon: Network, label: 'شبكة مشتركة', value: '٤ مدن', sub: 'مسارات تشاركية' },
   ];
 
+  const identities = {
+    factory: [
+      { id: "a1000000-0000-0000-0000-000000000001", name: "مصنع حبوب شملان" },
+      { id: "a1000000-0000-0000-0000-000000000002", name: "مصنع زيوت الأمانة" },
+      { id: "a1000000-0000-0000-0000-000000000003", name: "مطاحن السنابل" },
+      { id: "a1000000-0000-0000-0000-000000000004", name: "مصنع ألبان صافي" },
+    ],
+    retailer: [
+      { id: "b1000000-0000-0000-0000-000000000001", name: "سوبرماركت الأمل - شملان" },
+      { id: "b1000000-0000-0000-0000-000000000002", name: "متاجر النور - حدة" },
+      { id: "b1000000-0000-0000-0000-000000000003", name: "بقالة السلام - الحصبة" },
+      { id: "b1000000-0000-0000-0000-000000000004", name: "مؤسسة البركة - الستين" },
+    ],
+    driver: [
+      { id: "c1000000-0000-0000-0000-000000000001", name: "عبدالله الشملاني" },
+      { id: "c1000000-0000-0000-0000-000000000002", name: "محمد القاضي" },
+      { id: "c1000000-0000-0000-0000-000000000003", name: "أحمد الحميري" },
+    ],
+    admin: [{ id: "admin-system", name: "النظام المركزي" }],
+  };
+
   const handleEnter = (id: RoleId) => {
     if (entering) return;
-    setEntering(id);
-    setTimeout(() => onSelectRole(id), 2200);
+    setPickingIdentity(id);
+  };
+
+  const confirmIdentity = (id: string) => {
+    if (!pickingIdentity) return;
+
+    // Save identity
+    if (pickingIdentity === "factory") setActiveFactoryId(id);
+    if (pickingIdentity === "retailer") setActiveRetailerId(id);
+    if (pickingIdentity === "driver") setActiveDriverId(id);
+
+    const roleToEnter = pickingIdentity;
+    setPickingIdentity(null);
+    setEntering(roleToEnter);
+    setTimeout(() => onSelectRole(roleToEnter), 2200);
   };
 
   const enteringRole = roles.find((r) => r.id === entering);
@@ -263,6 +305,76 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         <span>© ٢٠٢٦ C-Route — منصّة المقاصة وسلسلة الإمداد</span>
         <span className="hidden md:inline">صنعاء • عدن • تعز • الحديدة</span>
       </footer>
+
+      {/* Identity Picker Modal */}
+      <AnimatePresence>
+        {pickingIdentity && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-[#0B1B3B]/40 backdrop-blur-md flex items-center justify-center p-6"
+            onClick={() => setPickingIdentity(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full max-w-md rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.15)] overflow-hidden border border-slate-200"
+            >
+              <div className="p-8 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-black text-[#0B1B3B] mb-1">
+                    اختر الحساب
+                  </h3>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+                    Select Test Identity
+                  </p>
+                </div>
+                <button
+                  onClick={() => setPickingIdentity(null)}
+                  className="w-10 h-10 rounded-full hover:bg-white flex items-center justify-center text-slate-400 transition-colors"
+                >
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-8 space-y-3 max-h-[60vh] overflow-y-auto">
+                {identities[pickingIdentity].map((identity) => (
+                  <button
+                    key={identity.id}
+                    onClick={() => confirmIdentity(identity.id)}
+                    className="w-full group flex items-center justify-between p-5 rounded-2xl border border-slate-100 hover:border-[#1A73E8] hover:bg-blue-50/30 transition-all text-right"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-slate-100 group-hover:bg-[#1A73E8] flex items-center justify-center transition-colors">
+                        <UserCircle2 className="w-6 h-6 text-slate-400 group-hover:text-white" />
+                      </div>
+                      <div>
+                        <div className="font-bold text-[#0B1B3B]">
+                          {identity.name}
+                        </div>
+                        <div className="text-[10px] text-slate-400 tabular-nums">
+                          ID: {identity.id.split("-")[0]}...
+                        </div>
+                      </div>
+                    </div>
+                    <ArrowLeft className="w-4 h-4 text-slate-300 group-hover:text-[#1A73E8] group-hover:-translate-x-1 transition-all" />
+                  </button>
+                ))}
+              </div>
+
+              <div className="p-8 bg-slate-50/50 text-center">
+                <p className="text-[10px] text-slate-400 leading-relaxed">
+                  هذا النظام تجريبي للمسابقة، يمكنك التبديل بين الحسابات لاختبار
+                  التكامل بين الأطراف.
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Entering overlay */}
       <AnimatePresence>

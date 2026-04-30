@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase, DEMO_RETAILER_ID } from '../lib/supabase';
-import type { Retailer, Order, CreditHistoryEntry } from '../lib/supabase';
+import { useState, useEffect, useCallback } from "react";
+import { supabase, getActiveRetailerId } from "../lib/supabase";
+import type { Retailer, Order, CreditHistoryEntry } from "../lib/supabase";
 
-export function useCreditScore(retailerId: string = DEMO_RETAILER_ID) {
+export function useCreditScore(
+  retailerId: string = getActiveRetailerId()
+) {
   const [retailer, setRetailer] = useState<Retailer | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [creditHistory, setCreditHistory] = useState<CreditHistoryEntry[]>([]);
@@ -19,11 +21,17 @@ export function useCreditScore(retailerId: string = DEMO_RETAILER_ID) {
 
   const fetchOrders = useCallback(async () => {
     const { data } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('retailer_id', retailerId)
-      .order('created_at', { ascending: false });
-    if (data) setOrders(data);
+      .from("orders")
+      .select(`
+        *,
+        order_items (
+          *,
+          products (*)
+        )
+      `)
+      .eq("retailer_id", retailerId)
+      .order("created_at", { ascending: false });
+    if (data) setOrders(data as any[]);
   }, [retailerId]);
 
   const fetchCreditHistory = useCallback(async () => {

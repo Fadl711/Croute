@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase, DEMO_FACTORY_ID } from '../lib/supabase';
-import type { Product } from '../lib/supabase';
+import { useState, useEffect, useCallback } from "react";
+import { supabase, getActiveFactoryId } from "../lib/supabase";
+import type { Product } from "../lib/supabase";
 
-export function useProducts(factoryId: string = DEMO_FACTORY_ID) {
+export function useProducts(factoryId: string = getActiveFactoryId()) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 

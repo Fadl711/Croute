@@ -279,8 +279,14 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
             <div className="h-8 w-px bg-slate-200" />
             <div className="flex items-center gap-3 pl-2">
               <div className="text-left hidden sm:block">
-                <div className="text-xs font-black text-slate-900 uppercase">سوبر ماركت الهناء</div>
-                <div className="text-[10px] text-[#1A73E8] font-bold">تاجر بلاتيني</div>
+                <div className="text-xs font-black text-slate-900 uppercase">
+                  {retailer?.name || "تحميل..."}
+                </div>
+                <div className="text-[10px] text-[#1A73E8] font-bold">
+                  {retailer?.credit_score && retailer.credit_score > 80
+                    ? "تاجر بلاتيني"
+                    : "تاجر ذهبي"}
+                </div>
               </div>
               <button className="w-10 h-10 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center hover:ring-4 hover:ring-blue-50 transition-all">
                 <User className="w-5 h-5 text-slate-400" />
@@ -363,7 +369,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
             </span>
           )}
         </div>
-        <div className="flex flex-col items-start pr-2 border-r border-white/20">
+        <div className="flex flex-col items-start pr-2 border-r border-white/20 text-right">
           <span className="text-[10px] text-blue-100 font-bold uppercase leading-none mb-1">عرض السلة</span>
           <span className="text-sm font-black tabular-nums">{(cartTotal * 0.7).toLocaleString()} ر.ي</span>
         </div>
