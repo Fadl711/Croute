@@ -187,7 +187,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
           <div className="flex items-center gap-12">
             <div className="flex items-center gap-2">
               <div className="w-12 h-12 md:w-14 md:h-14 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/10 p-1.5">
-                <img src="/src/assets/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
+                <img src="/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
               </div>
               <span className="hidden md:inline text-2xl font-black text-[#0B1B3B] tracking-tight">C-ROUTE <span className="text-[#1A73E8]">RETAIL</span></span>
             </div>

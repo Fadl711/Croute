@@ -174,11 +174,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
               whileHover={{ rotate: 10, scale: 1.05 }}
               className="w-14 h-14 md:w-24 md:h-24 rounded-3xl bg-white p-3 md:p-4 flex items-center justify-center shadow-[0_20px_50px_rgba(26,115,232,0.3)] border border-white/20"
             >
-              <img
-                src="/src/assets/logo.png"
-                alt="C-Route Logo"
-                className="w-full h-full object-contain"
-              />
+              <img src="/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
             </motion.div>
             <div>
               <div className="tracking-[0.2em] font-black text-lg md:text-2xl text-white">
