@@ -87,25 +87,42 @@ export default function ProductsTab({
               className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow"
             >
               {/* Product Image */}
-              <div className="h-40 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center relative">
-                {product.image ? (
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+              <div className="h-48 bg-slate-100 flex items-center justify-center relative overflow-hidden group">
+                {product.image_url ? (
+                  <motion.img 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    src={product.image_url} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                    loading="lazy"
+                  />
                 ) : (
-                  <ImageIcon className="w-16 h-16 text-slate-300" />
+                  <div className="flex flex-col items-center gap-2 text-slate-300 transition-colors group-hover:text-slate-400">
+                    <ImageIcon className="w-12 h-12" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">No Image</span>
+                  </div>
                 )}
-                <div className="absolute top-3 right-3">
-                  <span className="px-2 py-1 rounded-lg text-xs bg-white/90 backdrop-blur text-slate-700 border border-slate-200">
+                
+                {/* Badges Overlay */}
+                <div className="absolute top-3 right-3 z-10">
+                  <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-white/90 backdrop-blur text-slate-900 border border-slate-200 shadow-sm flex items-center gap-1">
                     {category.icon} {category.name}
                   </span>
                 </div>
+                
                 {isLowStock && (
-                  <div className="absolute top-3 left-3">
-                    <span className="px-2 py-1 rounded-lg text-xs bg-red-100 text-red-700 border border-red-200 flex items-center gap-1">
+                  <div className="absolute top-3 left-3 z-10">
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-black bg-red-500 text-white shadow-lg flex items-center gap-1 animate-pulse">
                       <AlertCircle className="w-3 h-3" />
                       مخزون منخفض
                     </span>
                   </div>
                 )}
+
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               </div>
 
               {/* Product Info */}

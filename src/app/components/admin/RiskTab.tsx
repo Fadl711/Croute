@@ -36,73 +36,79 @@ export default function RiskTab({ riskMap }: RiskTabProps) {
                 riskMap.map((item, i) => (
                   <div
                     key={i}
-                    className="p-6 bg-slate-50 border border-slate-100 rounded-2xl hover:border-blue-200 transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+                    className="p-6 bg-white border border-slate-100 rounded-3xl hover:border-blue-300 hover:shadow-xl hover:shadow-blue-900/5 transition-all flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 group"
                   >
                     <div className="flex items-center gap-6 flex-1">
-                      <div className="w-16 h-16 bg-white rounded-2xl flex flex-col items-center justify-center border border-slate-200 shadow-sm">
-                        <span className="text-[10px] text-slate-400 font-black uppercase mb-1">
-                          Score
+                      <div className="w-16 h-16 bg-blue-50 rounded-2xl flex flex-col items-center justify-center border border-blue-100 shadow-sm group-hover:scale-110 transition-transform">
+                        <span className="text-[9px] text-blue-400 font-black uppercase mb-0.5">
+                          SCORE
                         </span>
-                        <div className="text-xl font-black text-slate-900">
+                        <div className="text-xl font-black text-blue-900">
                           {item.score}
                         </div>
                       </div>
-                      <div>
-                        <h4 className="text-lg font-bold text-slate-900 mb-1">
+                      
+                      <div className="space-y-1.5">
+                        <h4 className="text-lg font-black text-slate-900 flex items-center gap-2">
                           {item.retailer}
+                          {item.score > 80 && <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" title="تاجر موثوق" />}
                         </h4>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-3">
                           <span
-                            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter px-2 py-0.5 rounded-md ${
+                            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-tighter px-3 py-1 rounded-full ${
                               item.risk === "عالي"
-                                ? "bg-red-50 text-red-600"
+                                ? "bg-red-50 text-red-600 border border-red-100"
                                 : item.risk === "متوسط"
-                                ? "bg-yellow-50 text-yellow-600"
-                                : "bg-emerald-50 text-emerald-600"
+                                ? "bg-amber-50 text-amber-600 border border-amber-100"
+                                : "bg-emerald-50 text-emerald-600 border border-emerald-100"
                             }`}
                           >
-                            <div
-                              className={`w-1.5 h-1.5 rounded-full ${item.color}`}
-                            />
-                            خطر {item.risk}
+                            <div className={`w-1.5 h-1.5 rounded-full ${item.color} animate-pulse`} />
+                            {item.risk === "عالي" ? "خطر مرتفع" : item.risk === "متوسط" ? "خطر متوسط" : "آمن ائتمانياً"}
                           </span>
-                          <span className="text-xs text-slate-500">
-                            الحد الائتماني:{" "}
-                            {item.credit.toLocaleString()} ر.ي
+                          <div className="h-4 w-px bg-slate-200" />
+                          <span className="text-xs text-slate-500 font-medium">
+                            المتبقي: <span className="font-bold text-slate-900">{(item.credit - item.used).toLocaleString()} ر.ي</span>
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="w-full md:w-64 space-y-2">
-                      <div className="flex justify-between text-xs text-slate-500 font-bold mb-1">
-                        <span>الاستهلاك الائتماني</span>
-                        <span>
-                          {item.credit > 0
-                            ? Math.round((item.used / item.credit) * 100)
-                            : 0}
-                          %
+                    <div className="w-full lg:w-72 space-y-3">
+                      <div className="flex justify-between text-[11px] font-black mb-1.5">
+                        <span className="text-slate-400 uppercase tracking-widest">تحليل الاستهلاك</span>
+                        <span className={item.used / item.credit > 0.85 ? "text-red-500" : "text-blue-600"}>
+                          {item.credit > 0 ? Math.round((item.used / item.credit) * 100) : 0}%
                         </span>
                       </div>
-                      <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/50">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{
-                            width: `${
-                              item.credit > 0
-                                ? (item.used / item.credit) * 100
-                                : 0
-                            }%`,
+                            width: `${item.credit > 0 ? (item.used / item.credit) * 100 : 0}%`,
                           }}
-                          className={`h-full ${
-                            item.risk === "عالي"
-                              ? "bg-red-500"
-                              : item.risk === "متوسط"
-                              ? "bg-yellow-500"
-                              : "bg-blue-500"
+                          className={`h-full rounded-full ${
+                            item.used / item.credit > 0.9
+                              ? "bg-gradient-to-r from-red-600 to-red-400 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
+                              : item.used / item.credit > 0.7
+                              ? "bg-gradient-to-r from-amber-500 to-amber-300"
+                              : "bg-gradient-to-r from-blue-600 to-blue-400"
                           }`}
                         />
                       </div>
+                      <div className="flex justify-between text-[9px] text-slate-400 font-bold uppercase">
+                        <span>مستعمل: {item.used.toLocaleString()}</span>
+                        <span>الإجمالي: {item.credit.toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <button className="p-2.5 bg-slate-50 text-slate-400 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all border border-slate-100">
+                        <Info className="w-5 h-5" />
+                      </button>
+                      <button className="px-4 py-2.5 bg-[#0B1B3B] text-white text-xs font-bold rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-900/20">
+                        إدارة الحد
+                      </button>
                     </div>
                   </div>
                 ))

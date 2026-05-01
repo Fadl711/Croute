@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Package,
   Truck,
@@ -6,8 +6,10 @@ import {
   Wallet,
   Globe,
   ChevronLeft,
+  TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { toast } from "sonner";
 import { useProducts } from "../../../hooks/useProducts";
 import { useWallet } from "../../../hooks/useWallet";
 import { useShipments } from "../../../hooks/useShipments";
@@ -28,6 +30,7 @@ import WalletTab from "./WalletTab";
 import AddProductModal from "./AddProductModal";
 import CashoutModal from "./CashoutModal";
 import FactoryMapTab from "./FactoryMapTab";
+import FactoryMarketMap from "./FactoryMarketMap";
 
 interface FactoryDashboardProps {
   onBack: () => void;
@@ -37,7 +40,6 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
   const [activeTab, setActiveTab] = useState("analytics");
 
   // Products State
-  const { products, addProduct, updateProduct, deleteProduct } = useProducts();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -52,34 +54,48 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
     minStock: 0,
     expiryDate: "",
     description: "",
+    image_url: "" as string | null,
   });
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
 
   // Wallet, Shipments & Orders State
-  const { factory, transactions: walletTransactions, requestCashout } =
-    useWallet();
-  // ✅ Pass factoryId explicitly for data isolation
-  const { shipments } = useShipments(
+  const { 
+    factory, 
+    transactions: walletTransactions, 
+    requestCashout, 
+    loading: walletLoading 
+  } = useWallet();
+
+  const { products, addProduct, updateProduct, deleteProduct, loading: productsLoading } = useProducts();
+  
+  const { shipments, loading: shipmentsLoading } = useShipments(
     factory?.id || getActiveFactoryId()
   );
-  const { incomingOrders, updateOrderStatus } = useOrders(
+  const { incomingOrders, updateOrderStatus, loading: ordersLoading } = useOrders(
     factory?.id || getActiveFactoryId()
   );
+
   const [showCashoutDialog, setShowCashoutDialog] = useState(false);
 
-  // Derived KPIs for Analytics
-  const deliveredShipmentsCount = shipments.filter(
-    (s) => s.status === "completed" || s.status === "delivered"
-  ).length;
-  const fulfillmentRate =
-    shipments.length > 0
-      ? (deliveredShipmentsCount / shipments.length) * 100
+  // Unified loading state - Wait for all to be stable for first load
+  const isInitialLoading = walletLoading || productsLoading || shipmentsLoading || ordersLoading;
+
+  // Derived KPIs for Analytics - Memoized to prevent flickering
+  const analyticsKpis = useMemo(() => {
+    const deliveredCount = shipments.filter(
+      (s) => s.status === "completed" || s.status === "delivered"
+    ).length;
+    
+    const fulfillment = shipments.length > 0
+      ? (deliveredCount / shipments.length) * 100
       : 100;
 
-  const analyticsKpis = {
-    netRevenue: factory?.balance || 0,
-    deliveredShipments: deliveredShipmentsCount,
-    fulfillmentRate: fulfillmentRate,
-  };
+    return {
+      netRevenue: factory?.balance || 0,
+      deliveredShipments: deliveredCount,
+      fulfillmentRate: fulfillment,
+    };
+  }, [shipments, factory?.balance]);
 
   // Handlers
   const resetForm = () => {
@@ -93,41 +109,159 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
       minStock: 0,
       expiryDate: "",
       description: "",
+      image_url: null,
+    });
+    setSelectedImageFile(null);
+  };
+
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Max dimension 800px
+          const MAX_SIZE = 800;
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+          }, 'image/jpeg', 0.7); // 70% quality
+        };
+      };
     });
   };
 
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      // Compress first
+      const compressedBlob = await compressImage(file);
+      const fileExt = 'jpg'; // Always jpeg after compression
+      const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `product-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, compressedBlob, {
+          contentType: 'image/jpeg'
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('products')
+        .getPublicUrl(filePath);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    }
+  };
+
+  const handleImageChange = (file: File | null) => {
+    setSelectedImageFile(file);
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setFormData(prev => ({ ...prev, image_url: previewUrl }));
+    } else {
+      setFormData(prev => ({ ...prev, image_url: null }));
+    }
+  };
+
   const handleAddProduct = async () => {
-    await addProduct({
-      name: formData.name,
-      category: formData.category,
-      unit: formData.unit,
-      quantity: formData.quantity,
-      price: formData.price,
-      barcode: formData.barcode,
-      min_stock: formData.minStock,
-      expiry_date: formData.expiryDate,
-      description: formData.description,
-    });
-    setIsAddDialogOpen(false);
-    resetForm();
+    try {
+      let finalImageUrl = formData.image_url;
+
+      if (selectedImageFile) {
+        const uploadedUrl = await uploadImage(selectedImageFile);
+        if (uploadedUrl) finalImageUrl = uploadedUrl;
+      }
+
+      const { error } = await addProduct({
+        name: formData.name,
+        category: formData.category,
+        unit: formData.unit,
+        quantity: formData.quantity,
+        price: formData.price,
+        barcode: formData.barcode || null,
+        min_stock: formData.minStock,
+        expiry_date: formData.expiryDate || null, // Convert "" to null
+        description: formData.description || null,
+        image_url: finalImageUrl,
+      });
+
+      if (error) {
+        console.error("Error adding product:", error);
+        toast.error(`خطأ في إضافة المنتج: ${error.message}`);
+        return;
+      }
+
+      toast.success("تم إضافة المنتج بنجاح!");
+      setIsAddDialogOpen(false);
+      resetForm();
+    } catch (err) {
+      console.error("Unexpected error:", err);
+    }
   };
 
   const handleEditProduct = async () => {
     if (!editingProduct) return;
-    await updateProduct(editingProduct.id, {
-      name: formData.name,
-      category: formData.category,
-      unit: formData.unit,
-      quantity: formData.quantity,
-      price: formData.price,
-      barcode: formData.barcode,
-      min_stock: formData.minStock,
-      expiry_date: formData.expiryDate,
-      description: formData.description,
-    });
-    setIsAddDialogOpen(false);
-    setEditingProduct(null);
-    resetForm();
+    
+    try {
+      let finalImageUrl = formData.image_url;
+      if (selectedImageFile) {
+        const uploadedUrl = await uploadImage(selectedImageFile);
+        if (uploadedUrl) finalImageUrl = uploadedUrl;
+      }
+
+      const { error } = await updateProduct(editingProduct.id, {
+        name: formData.name,
+        category: formData.category,
+        unit: formData.unit,
+        quantity: formData.quantity,
+        price: formData.price,
+        barcode: formData.barcode || null,
+        min_stock: formData.minStock,
+        expiry_date: formData.expiryDate || null, // Convert "" to null
+        description: formData.description || null,
+        image_url: finalImageUrl,
+      });
+
+      if (error) {
+        console.error("Error updating product:", error);
+        toast.error(`خطأ في تعديل المنتج: ${error.message}`);
+        return;
+      }
+
+      toast.success("تم تعديل المنتج بنجاح!");
+      setIsAddDialogOpen(false);
+      setEditingProduct(null);
+      resetForm();
+    } catch (err) {
+      console.error("Unexpected error:", err);
+    }
   };
 
   const openEditDialog = (product: Product) => {
@@ -142,7 +276,9 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
       minStock: product.min_stock || 0,
       expiryDate: product.expiry_date || "",
       description: product.description || "",
+      image_url: product.image_url || null,
     });
+    setSelectedImageFile(null);
     setIsAddDialogOpen(true);
   };
 
@@ -185,7 +321,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
 
     if (shipmentError || !shipmentData) {
       console.error("Error creating shipment:", shipmentError);
-      alert("تم قبول الطلب، لكن حدث خطأ أثناء تكوين الشحنة.");
+      toast.error("تم قبول الطلب، لكن حدث خطأ أثناء تكوين الشحنة.");
       return;
     }
 
@@ -221,13 +357,13 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
       },
     ]);
 
-    alert("تم قبول الطلب وتجهيز الشحنة بنجاح! يمكن للأدمن إسناد السائق.");
+    toast.success("تم قبول الطلب وتجهيز الشحنة بنجاح! يمكن للأدمن إسناد السائق.");
   };
 
   const handleRejectOrder = async (orderId: string) => {
     if (!confirm("هل أنت متأكد من إلغاء هذا الطلب؟")) return;
     await updateOrderStatus(orderId, "cancelled");
-    alert("تم إلغاء الطلب بنجاح.");
+    toast.info("تم إلغاء الطلب بنجاح.");
   };
 
   // Helper Info
@@ -250,6 +386,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
     { id: "products", label: "إدارة المخزون", icon: Package },
     { id: "shipments", label: "الطلبات والشحنات", icon: Truck },
     { id: "map", label: "رادار الشحنات", icon: Globe },
+    { id: "market", label: "السوق والانتشار", icon: TrendingUp },
     { id: "wallet", label: "المحفظة والتسويات", icon: Wallet },
   ];
 
@@ -360,51 +497,66 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
 
         {/* Tab Content */}
         <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
-          <AnimatePresence mode="wait">
-            {activeTab === "products" && (
-              <ProductsTab
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                selectedCategory={selectedCategory}
-                setSelectedCategory={setSelectedCategory}
-                filteredProducts={filteredProducts}
-                onAddProduct={() => {
-                  resetForm();
-                  setEditingProduct(null);
-                  setIsAddDialogOpen(true);
-                }}
-                onEditProduct={openEditDialog}
-                onDeleteProduct={deleteProduct}
-                getCategoryInfo={getCategoryInfo}
-                getUnitInfo={getUnitInfo}
-              />
-            )}
+          {isInitialLoading ? (
+            <div className="space-y-8 animate-pulse">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="h-32 bg-slate-200 rounded-3xl" />
+                ))}
+              </div>
+              <div className="h-[400px] bg-slate-200 rounded-3xl" />
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              {activeTab === "products" && (
+                <ProductsTab
+                  searchQuery={searchQuery}
+                  setSearchQuery={setSearchQuery}
+                  selectedCategory={selectedCategory}
+                  setSelectedCategory={setSelectedCategory}
+                  filteredProducts={filteredProducts}
+                  onAddProduct={() => {
+                    resetForm();
+                    setEditingProduct(null);
+                    setIsAddDialogOpen(true);
+                  }}
+                  onEditProduct={openEditDialog}
+                  onDeleteProduct={deleteProduct}
+                  getCategoryInfo={getCategoryInfo}
+                  getUnitInfo={getUnitInfo}
+                />
+              )}
 
-            {activeTab === "shipments" && (
-              <ShipmentsTab
-                shipments={shipments}
-                incomingOrders={incomingOrders}
-                onAcceptOrder={handleAcceptOrder}
-                onRejectOrder={handleRejectOrder}
-              />
-            )}
+              {activeTab === "shipments" && (
+                <ShipmentsTab
+                  shipments={shipments}
+                  incomingOrders={incomingOrders}
+                  onAcceptOrder={handleAcceptOrder}
+                  onRejectOrder={handleRejectOrder}
+                />
+              )}
 
-            {activeTab === "analytics" && (
-              <AnalyticsTab kpis={analyticsKpis} />
-            )}
+              {activeTab === "analytics" && (
+                <AnalyticsTab kpis={analyticsKpis} />
+              )}
 
-            {activeTab === "wallet" && (
-              <WalletTab
-                factory={factory}
-                walletTransactions={walletTransactions}
-                onCashout={() => setShowCashoutDialog(true)}
-              />
-            )}
+              {activeTab === "wallet" && (
+                <WalletTab
+                  factory={factory}
+                  walletTransactions={walletTransactions}
+                  onCashout={() => setShowCashoutDialog(true)}
+                />
+              )}
 
-            {activeTab === "map" && (
-              <FactoryMapTab shipments={shipments} />
-            )}
-          </AnimatePresence>
+              {activeTab === "map" && (
+                <FactoryMapTab shipments={shipments} />
+              )}
+
+              {activeTab === "market" && (
+                <FactoryMarketMap factory={factory} />
+              )}
+            </AnimatePresence>
+          )}
         </div>
       </main>
 
@@ -417,6 +569,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
         setFormData={setFormData}
         onSave={editingProduct ? handleEditProduct : handleAddProduct}
         onReset={resetForm}
+        onImageChange={handleImageChange}
       />
 
       <CashoutModal

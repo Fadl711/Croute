@@ -18,6 +18,8 @@ import {
 import type { Order } from "../../../lib/supabase";
 import RetailerTrackingMap from "./RetailerTrackingMap";
 import InvoiceDocument from "../ui/InvoiceDocument";
+import { InvoiceTemplate } from "../ui/invoices/InvoiceTemplate";
+import { printComponent } from "../ui/invoices/PrintService";
 
 interface OrdersTabProps {
   orders: Order[];
@@ -258,11 +260,11 @@ export default function OrdersTab({ orders = [] }: OrdersTabProps) {
                     وثيقة معتمدة من C-Route
                   </span>
                   <button 
-                    onClick={() => setShowInvoice(true)}
+                    onClick={() => printComponent(<InvoiceTemplate data={selectedOrder} type="retailer_purchase" />)}
                     className="flex items-center gap-2 text-xs font-black text-blue-700 hover:text-blue-800 bg-white px-4 py-2 rounded-xl shadow-sm border border-blue-100 transition-all active:scale-95"
                   >
                     <Printer className="w-4 h-4" />
-                    طباعة الفاتورة الرسمية
+                    طباعة الفاتورة مباشرة (A4)
                   </button>
                 </div>
               )}

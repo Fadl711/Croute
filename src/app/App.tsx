@@ -4,6 +4,7 @@ import RetailerDashboard from './components/retailer/RetailerDashboard';
 import FactoryDashboard from './components/factory/FactoryDashboard';
 import DriverDashboard from './components/driver/DriverDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
+import { Toaster } from "sonner";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -33,6 +34,21 @@ export default function App() {
   return (
     <Router>
       <AppContent />
+      <Toaster 
+        position="top-center" 
+        expand={true} 
+        richColors 
+        dir="rtl"
+        toastOptions={{
+          style: {
+            fontFamily: "'Cairo', sans-serif",
+            borderRadius: '1.25rem',
+            padding: '1rem',
+            border: '1px solid rgba(255,255,255,0.1)',
+            backdropFilter: 'blur(10px)',
+          }
+        }}
+      />
     </Router>
   );
 }

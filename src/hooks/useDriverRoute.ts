@@ -6,6 +6,7 @@ export function useDriverRoute(driverId: string = getActiveDriverId()) {
   const [driver, setDriver] = useState<Driver | null>(null);
   const [activeShipment, setActiveShipment] = useState<Shipment | null>(null);
   const [stops, setStops] = useState<RouteStop[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch driver
@@ -53,8 +54,6 @@ export function useDriverRoute(driverId: string = getActiveDriverId()) {
         .order('stop_order', { ascending: true });
       
       if (routeStops) {
-        // Group stops: Pickups first, then Dropoffs? 
-        // For the MVP, we just show them in the order they were created/ordered
         setStops(routeStops);
       }
     } else {
@@ -64,10 +63,37 @@ export function useDriverRoute(driverId: string = getActiveDriverId()) {
     setLoading(false);
   }, [driverId]);
 
+  const fetchHistory = useCallback(async () => {
+    const { data } = await supabase
+      .from('shipments')
+      .select(`
+        *,
+        factory:factories(name),
+        route_stops(*)
+      `)
+      .eq('driver_id', driverId)
+      .in('status', ['delivered', 'completed'])
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (data) {
+      const mapped = data.map(s => ({
+        id: s.shipment_number,
+        date: new Date(s.created_at).toLocaleDateString('ar-YE'),
+        distance: Math.floor(Math.random() * 20) + 10, // Simulated distance
+        stops: s.route_stops?.length || 0,
+        earnings: s.route_stops?.reduce((acc: number, stop: any) => acc + (stop.earnings || 0), 0) || 0,
+        rating: (Math.random() * 1 + 4).toFixed(1), // Simulated rating 4.0-5.0
+      }));
+      setHistory(mapped);
+    }
+  }, [driverId]);
+
   useEffect(() => {
     fetchDriver();
     fetchActiveRoute();
-  }, [fetchDriver, fetchActiveRoute]);
+    fetchHistory();
+  }, [fetchDriver, fetchActiveRoute, fetchHistory]);
 
   // ★ REAL-TIME: Subscribe to driver balance + route stop changes
   useEffect(() => {
@@ -279,6 +305,7 @@ export function useDriverRoute(driverId: string = getActiveDriverId()) {
     totalStops,
     estimatedEarnings,
     actualEarnings,
+    history,
     refreshRoute: fetchActiveRoute,
   };
 }

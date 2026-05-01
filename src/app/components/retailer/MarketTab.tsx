@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { LayoutGrid, List, ChevronDown, SlidersHorizontal, Sparkles } from 'lucide-react';
+import { LayoutGrid, List, Search } from 'lucide-react';
 import type { MarketplaceItem } from '../../../hooks/useMarketplace';
 import ProductCard from './ProductCard';
 
@@ -10,127 +10,120 @@ interface MarketTabProps {
   categories: { id: string, name: string, icon: string }[];
   selectedCategory: string;
   setSelectedCategory: (c: string) => void;
-  groupBy: string;
-  setGroupBy: (g: any) => void;
   viewMode: 'grid' | 'list';
   setViewMode: (m: 'grid' | 'list') => void;
+  searchQuery: string;
+  setSearchQuery: (q: string) => void;
 }
 
 export default function MarketTab(props: MarketTabProps) {
   const {
     loading, filteredProducts, onAddToCart, categories,
-    selectedCategory, setSelectedCategory, groupBy, setGroupBy,
-    viewMode, setViewMode
+    selectedCategory, setSelectedCategory,
+    viewMode, setViewMode,
+    searchQuery, setSearchQuery
   } = props;
 
   return (
     <motion.div
       key="market"
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      className="flex flex-col lg:flex-row gap-8"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="flex flex-col gap-6"
     >
-      <div className="flex-1">
-        {/* Marketplace Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-black text-[#0B1B3B] tracking-tight mb-2 flex items-center gap-3">
-              سوق الجملة الذكي
-              <div className="bg-blue-50 text-[#1A73E8] text-[10px] px-2 py-1 rounded-md border border-blue-100 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                <span>AI-Matched</span>
-              </div>
-            </h1>
-            <p className="text-slate-500 text-sm">اكتشف أفضل العروض المباشرة من المصانع بأسعار الجملة</p>
+      {/* Search & Simple Filters */}
+      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="ابحث عن منتج أو مصنع..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pr-12 pl-4 py-3.5 bg-slate-50 border border-transparent focus:bg-white focus:border-blue-500 rounded-2xl transition-all outline-none text-sm font-medium text-right"
+              dir="rtl"
+            />
           </div>
           
-          <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm self-start">
+          <div className="flex items-center gap-2">
             <button 
               onClick={() => setViewMode('grid')}
-              className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-[#0B1B3B] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex-1 md:flex-none p-3.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-[#0B1B3B] text-white' : 'bg-slate-50 text-slate-400'}`}
             >
-              <LayoutGrid className="w-5 h-5" />
+              <LayoutGrid className="w-5 h-5 mx-auto" />
             </button>
             <button 
               onClick={() => setViewMode('list')}
-              className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-[#0B1B3B] text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`flex-1 md:flex-none p-3.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-[#0B1B3B] text-white' : 'bg-slate-50 text-slate-400'}`}
             >
-              <List className="w-5 h-5" />
+              <List className="w-5 h-5 mx-auto" />
             </button>
           </div>
         </div>
 
-        {/* Categories Scroller */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-6 scrollbar-hide">
+        {/* Categories Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
           {categories.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`flex items-center gap-2.5 px-6 py-3.5 rounded-2xl whitespace-nowrap transition-all duration-300 border-2 ${
+              className={`px-5 py-2.5 rounded-full whitespace-nowrap text-xs font-black transition-all ${
                 selectedCategory === cat.id 
-                  ? 'bg-[#1A73E8] border-[#1A73E8] text-white shadow-xl shadow-blue-500/20 translate-y-[-2px]' 
-                  : 'bg-white border-transparent text-slate-600 hover:bg-slate-50 hover:border-slate-100 shadow-sm'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
+                  : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-200'
               }`}
             >
-              <span className="text-xl">{cat.icon}</span>
-              <span className="text-sm font-bold">{cat.name}</span>
+              {cat.icon} {cat.name}
             </button>
           ))}
         </div>
-
-        {/* Dynamic Toolbar */}
-        <div className="flex items-center justify-between mb-6 bg-slate-100/50 p-3 rounded-2xl border border-slate-200/60">
-          <div className="flex items-center gap-4">
-            <div className="text-xs font-bold text-slate-500 mr-2 flex items-center gap-2">
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              عرض حسب:
-            </div>
-            <div className="flex bg-white rounded-xl p-1 border border-slate-200">
-              {[
-                { id: 'none', label: 'الكل' },
-                { id: 'factory', label: 'المصنع' },
-                { id: 'route', label: 'المسار' }
-              ].map(g => (
-                <button
-                  key={g.id}
-                  onClick={() => setGroupBy(g.id)}
-                  className={`px-4 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
-                    groupBy === g.id ? 'bg-[#0B1B3B] text-white' : 'text-slate-500 hover:bg-slate-50'
-                  }`}
-                >
-                  {g.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="text-[11px] font-bold text-slate-400">
-            تم العثور على <span className="text-slate-900">{filteredProducts.length}</span> منتج
-          </div>
-        </div>
-
-        {/* Products Grid */}
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {[1,2,3,4,5,6].map(i => (
-              <div key={i} className="bg-white rounded-2xl h-[400px] animate-pulse border border-slate-100" />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
-            {filteredProducts.map(product => (
-              <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
-            ))}
-            {filteredProducts.length === 0 && (
-              <div className="col-span-full py-20 text-center">
-                <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🔍</div>
-                <h3 className="text-xl text-slate-600 font-bold mb-2">لا توجد نتائج</h3>
-                <p className="text-slate-400">حاول تغيير معايير البحث أو التصفية</p>
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Results Info */}
+      <div className="flex items-center justify-between px-2">
+        <h2 className="text-lg font-black text-slate-900">
+          {selectedCategory === 'all' ? 'جميع المنتجات' : `قسم ${categories.find(c => c.id === selectedCategory)?.name}`}
+        </h2>
+        <span className="text-xs font-bold text-slate-400">
+          {filteredProducts.length} منتج متوفر
+        </span>
+      </div>
+
+      {/* Products Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[1,2,3,4,5,6].map(i => (
+            <div key={i} className="bg-white rounded-3xl h-[350px] animate-pulse border border-slate-100" />
+          ))}
+        </div>
+      ) : (
+        <div className={viewMode === 'grid' 
+          ? "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pb-24" 
+          : "flex flex-col gap-4 pb-24"
+        }>
+          {filteredProducts.map(product => (
+            <ProductCard key={product.id} product={product} onAddToCart={onAddToCart} />
+          ))}
+          
+          {filteredProducts.length === 0 && (
+            <div className="col-span-full py-24 text-center bg-white rounded-[3rem] border border-dashed border-slate-200">
+              <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search className="w-10 h-10 text-slate-300" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 mb-2">لا توجد نتائج بحث</h3>
+              <p className="text-slate-500 max-w-xs mx-auto">لم نجد أي منتجات تطابق معاييرك الحالية. حاول تغيير الفئة أو كلمات البحث.</p>
+              <button 
+                onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}
+                className="mt-6 text-blue-600 font-bold hover:underline"
+              >
+                إعادة ضبط الفلاتر
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }

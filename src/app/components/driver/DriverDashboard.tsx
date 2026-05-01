@@ -28,7 +28,8 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
   const {
     driver, activeShipment, stops, currentStop: currentTask,
     loading, confirmDelivery,
-    completedStops, totalStops, estimatedEarnings, actualEarnings
+    completedStops, totalStops, estimatedEarnings, actualEarnings,
+    history: tripHistory
   } = useDriverRoute();
 
   const routeStats = {
@@ -38,12 +39,10 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
     completed: completedStops || 0,
     estimatedEarnings: estimatedEarnings || 0,
     actualEarnings: actualEarnings || 0,
-    distance: `${(stops.length * 12 + 5)} كم`, // Dynamic-ish distance
+    distance: `${(stops.length * 12 + 5)} كم`,
     fuelSaved: '30%',
     eta: `${Math.ceil((stops.length - completedStops) * 0.5)} ساعة`,
   };
-
-  const tripHistory: any[] = [];
 
   const earnings = {
     today: actualEarnings || 0,

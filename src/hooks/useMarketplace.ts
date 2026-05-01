@@ -8,34 +8,36 @@ export interface MarketplaceItem extends Product {
 
 export function useMarketplace() {
   const [items, setItems] = useState<MarketplaceItem[]>([]);
-  const [factories, setFactories] = useState<Factory[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchMarketplace = useCallback(async () => {
-    setLoading(true);
-    // Fetch products
-    const { data: productsData } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false });
-      
-    // Fetch factories for names
-    const { data: factoriesData } = await supabase
-      .from('factories')
-      .select('*');
+    try {
+      setLoading(true);
+      // Fetch products with factory info in one query
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          *,
+          factories:factory_id (
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-    if (productsData && factoriesData) {
-      setFactories(factoriesData);
-      
-      const factoryMap = new Map(factoriesData.map(f => [f.id, f.name]));
-      
-      const enrichedItems = productsData.map(p => ({
-        ...p,
-        factory_name: factoryMap.get(p.factory_id) || 'مصنع غير معروف',
-      }));
-      setItems(enrichedItems);
+      if (error) throw error;
+
+      if (data) {
+        const enrichedItems = data.map((p: any) => ({
+          ...p,
+          factory_name: p.factories?.name || 'مصنع غير معروف',
+        }));
+        setItems(enrichedItems);
+      }
+    } catch (err) {
+      console.error('Error fetching marketplace:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -44,7 +46,6 @@ export function useMarketplace() {
 
   return {
     items,
-    factories,
     loading,
     refreshMarketplace: fetchMarketplace,
   };

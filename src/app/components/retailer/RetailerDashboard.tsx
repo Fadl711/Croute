@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { toast } from "sonner";
 import {
   LayoutDashboard, ShoppingBag, History, Wallet as WalletIcon,
   Bell, User, Settings, LogOut, Search,
@@ -41,20 +42,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedFactories, setSelectedFactories] = useState<string[]>([]);
-  const [selectedRoutes, setSelectedRoutes] = useState<string[]>([]);
-  const [collaborativeOnly, setCollaborativeOnly] = useState(false);
-  const [financialTags, setFinancialTags] = useState<string[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 25000]);
-  const [groupBy, setGroupBy] = useState<'none' | 'factory' | 'route'>('none');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    factory: true,
-    route: true,
-    finance: true,
-    price: true
-  });
 
   // Data Hooks
   const { items: allProducts = [], loading } = useMarketplace();
@@ -84,47 +72,21 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
     ];
   }, [allProducts]);
 
-  const allFactories = useMemo(() => Array.from(new Set(allProducts.map(p => p.factory_name))), [allProducts]);
-  const allRoutes = ['المسار A', 'المسار B', 'المسار C'];
-
   const filteredProducts = useMemo(() => {
     return allProducts.filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           p.factory_name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
-      const matchesFactory = selectedFactories.length === 0 || selectedFactories.includes(p.factory_name);
-      const matchesPrice = p.price >= priceRange[0] && p.price <= priceRange[1];
-      
-      // Heuristics for filtering
-      const charCode = p.id.charCodeAt(0) + p.id.charCodeAt(p.id.length - 1);
-      const route = allRoutes[charCode % 3];
-      const matchesRoute = selectedRoutes.length === 0 || selectedRoutes.includes(route);
-      const matchesCollab = !collaborativeOnly || (route === 'المسار A' || route === 'المسار B');
-      
-      const isFinanced = p.price <= 18000;
-      const isInstant = p.price > 10000;
-      const matchesFinancial = financialTags.length === 0 || financialTags.every(tag => {
-        if (tag === 'credit') return isFinanced;
-        if (tag === 'instant') return isInstant;
-        if (tag === 'discount') return matchesCollab;
-        return true;
-      });
-
-      return matchesSearch && matchesCategory && matchesFactory && matchesPrice && matchesRoute && matchesCollab && matchesFinancial;
+      return matchesSearch && matchesCategory;
     });
-  }, [allProducts, searchQuery, selectedCategory, selectedFactories, priceRange, selectedRoutes, collaborativeOnly, financialTags]);
+  }, [allProducts, searchQuery, selectedCategory]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (searchQuery) count++;
     if (selectedCategory !== 'all') count++;
-    count += selectedFactories.length;
-    count += selectedRoutes.length;
-    if (collaborativeOnly) count++;
-    count += financialTags.length;
-    if (priceRange[0] > 0 || priceRange[1] < 25000) count++;
     return count;
-  }, [searchQuery, selectedCategory, selectedFactories, selectedRoutes, collaborativeOnly, financialTags, priceRange]);
+  }, [searchQuery, selectedCategory]);
 
   // Cart logic
   const addToCart = (product: MarketplaceItem) => {
@@ -155,27 +117,15 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
 
   const groupedByRoute = useMemo(() => {
     return cart.reduce((acc: any, item) => {
+      // Simple heuristic for routes
       const charCode = item.id.charCodeAt(0) + item.id.charCodeAt(item.id.length - 1);
+      const allRoutes = ['المسار A', 'المسار B', 'المسار C'];
       const route = allRoutes[charCode % 3];
       if (!acc[route]) acc[route] = [];
       acc[route].push(item);
       return acc;
     }, {});
   }, [cart]);
-
-  const resetFilters = () => {
-    setSelectedCategory('all');
-    setSelectedFactories([]);
-    setSelectedRoutes([]);
-    setCollaborativeOnly(false);
-    setFinancialTags([]);
-    setPriceRange([0, 25000]);
-    setSearchQuery('');
-  };
-
-  const toggleSection = (section: string) => {
-    setOpenSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
 
   const handleCheckout = async () => {
     if (cart.length === 0) return;
@@ -188,6 +138,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
         return acc;
       }, {});
 
+      const allRoutes = ['المسار A', 'المسار B', 'المسار C'];
       for (const [factoryId, items] of Object.entries(itemsByFactory) as [string, CartItem[]][]) {
         const total = items.reduce((sum, i) => sum + (i.price * i.cartQuantity), 0);
         const finalAmount = Math.round(total * 0.7); // Apply 30% route discount and round for bigint
@@ -216,14 +167,11 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
 
       setCart([]);
       setShowCartDialog(false);
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        setActiveTab('orders');
-      }, 3000);
+      toast.success("تم إرسال الطلبات بنجاح!");
+      setActiveTab('orders');
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('حدث خطأ أثناء إتمام الطلب. يرجى المحاولة مرة أخرى.');
+      toast.error('حدث خطأ أثناء إتمام الطلب. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsCheckingOut(false);
     }
@@ -267,17 +215,6 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
                 );
               })}
             </div>
-
-            {/* Mobile Filter Toggle (Only on Market) */}
-            {activeTab === 'market' && (
-              <button 
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden flex items-center gap-2 px-3 py-2 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold"
-              >
-                <Filter className="w-4 h-4" />
-                تصفية {activeFilterCount > 0 && `(${activeFilterCount})`}
-              </button>
-            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -287,7 +224,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
             </button>
             <div className="h-8 w-px bg-slate-200" />
             <div className="flex items-center gap-3 pl-2">
-              <div className="text-left hidden sm:block">
+              <div className="text-left hidden sm:block text-right">
                 <div className="text-xs font-black text-slate-900 uppercase">
                   {retailer?.name || "تحميل..."}
                 </div>
@@ -310,30 +247,16 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
 
       {/* Main Content */}
       <main className="max-w-[1600px] mx-auto px-6 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Filters - Only show on market tab */}
-          {activeTab === 'market' && (
-            <div className={`${mobileMenuOpen ? 'block' : 'hidden'} lg:block`}>
-              <FilterSidebar 
-                {...{
-                  searchQuery, setSearchQuery, openSections, toggleSection,
-                  allFactories, selectedFactories, setSelectedFactories,
-                  allProducts, allRoutes, selectedRoutes, setSelectedRoutes,
-                  collaborativeOnly, setCollaborativeOnly, financialTags, setFinancialTags,
-                  priceRange, setPriceRange, activeFilterCount, resetFilters, toggleInArray
-                }}
-              />
-            </div>
-          )}
-
+        <div className="flex flex-col gap-8">
           <div className="flex-1">
             <AnimatePresence mode="wait">
               {activeTab === 'market' && (
                 <MarketTab 
                   {...{
                     loading, filteredProducts, onAddToCart: addToCart, categories,
-                    selectedCategory, setSelectedCategory, groupBy, setGroupBy,
-                    viewMode, setViewMode
+                    selectedCategory, setSelectedCategory,
+                    viewMode, setViewMode,
+                    searchQuery, setSearchQuery
                   }}
                 />
               )}

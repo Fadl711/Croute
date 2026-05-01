@@ -58,8 +58,12 @@ export default function CartDialog(props: CartDialogProps) {
                     <div className="space-y-4">
                       {items.map((item) => (
                         <div key={item.id} className="flex items-center gap-4 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                          <div className="w-14 h-14 rounded-lg bg-slate-50 flex items-center justify-center text-2xl border border-slate-100">
-                            {getProductImage(item.category)}
+                          <div className="w-14 h-14 rounded-lg bg-slate-50 flex items-center justify-center text-2xl border border-slate-100 overflow-hidden">
+                            {item.image_url ? (
+                              <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                            ) : (
+                              getProductImage(item.category)
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <h4 className="text-sm font-bold text-slate-900 mb-0.5 truncate">{item.name}</h4>

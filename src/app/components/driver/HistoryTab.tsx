@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { FileText, Calendar, MapPin, DollarSign, Clock, Star, Zap, Navigation } from 'lucide-react';
+import { FileText, Calendar, MapPin, DollarSign, Clock, Star, Zap, Navigation, Award } from 'lucide-react';
 
 interface HistoryTabProps {
   tripHistory: any[];

@@ -22,19 +22,33 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
       animate={{ opacity: 1, scale: 1 }}
       className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-blue-500/5 transition-all group"
     >
-      <div className="relative aspect-square bg-slate-100 flex items-center justify-center text-6xl group-hover:scale-110 transition-transform duration-500">
-        {getProductImage(product.category)}
+      <div className="relative aspect-square bg-slate-50 flex items-center justify-center overflow-hidden transition-all duration-500">
+        {product.image_url ? (
+          <motion.img 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            src={product.image_url} 
+            alt={product.name} 
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+            loading="lazy"
+          />
+        ) : (
+          <div className="text-6xl group-hover:scale-110 transition-transform duration-500">
+            {getProductImage(product.category)}
+          </div>
+        )}
         
         {/* Badges Overlay */}
-        <div className="absolute top-3 right-3 flex flex-col gap-2">
+        <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
           {discount > 0 && (
-            <div className="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1 animate-pulse">
+            <div className="bg-orange-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1 animate-bounce">
               <Flame className="w-3 h-3" />
               <span>-{discount}% خصم مسار</span>
             </div>
           )}
           {instant && (
-            <div className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg flex items-center gap-1">
+            <div className="bg-[#1A73E8] text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1">
               <Zap className="w-3 h-3" />
               <span>تسوية فورية</span>
             </div>
