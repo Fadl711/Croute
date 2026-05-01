@@ -1,6 +1,9 @@
 import { motion } from 'motion/react';
-import { PackageCheck, Package, MapPin } from 'lucide-react';
+import { PackageCheck, Package, MapPin, Printer } from 'lucide-react';
+import { useState } from 'react';
 import type { Shipment, Order } from '../../../lib/supabase';
+import { AnimatePresence } from 'motion/react';
+import InvoiceDocument from '../ui/InvoiceDocument';
 
 interface ShipmentsTabProps {
   shipments: Shipment[];
@@ -10,6 +13,8 @@ interface ShipmentsTabProps {
 }
 
 export default function ShipmentsTab({ shipments, incomingOrders, onAcceptOrder, onRejectOrder }: ShipmentsTabProps) {
+  const [printingItem, setPrintingItem] = useState<{ data: Order | Shipment, type: "factory_sale" | "driver_receipt" } | null>(null);
+
   return (
     <motion.div
       key="shipments"
@@ -74,12 +79,21 @@ export default function ShipmentsTab({ shipments, incomingOrders, onAcceptOrder,
                     <PackageCheck className="w-4 h-4" />
                     اعتماد الطلب وتجهيز الشحنة
                   </button>
-                  <button 
-                    onClick={() => onRejectOrder(order.id)}
-                    className="w-full mt-2 bg-red-50 text-red-600 py-2 rounded-xl text-[10px] font-bold hover:bg-red-100 transition-all border border-red-100"
-                  >
-                    إلغاء الطلب
-                  </button>
+                  <div className="flex gap-2 mt-2">
+                    <button 
+                      onClick={() => setPrintingItem({ data: order, type: "factory_sale" })}
+                      className="flex-1 bg-white border border-slate-200 text-slate-700 py-2 rounded-xl text-[10px] font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-1"
+                    >
+                      <Printer className="w-3 h-3" />
+                      طباعة الفاتورة
+                    </button>
+                    <button 
+                      onClick={() => onRejectOrder(order.id)}
+                      className="flex-1 bg-red-50 text-red-600 py-2 rounded-xl text-[10px] font-bold hover:bg-red-100 transition-all border border-red-100"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -98,7 +112,8 @@ export default function ShipmentsTab({ shipments, incomingOrders, onAcceptOrder,
                 <th className="px-4 py-3 text-right text-sm font-medium text-slate-600">المسار</th>
                 <th className="px-4 py-3 text-right text-sm font-medium text-slate-600">تاريخ الإنشاء</th>
                 <th className="px-4 py-3 text-right text-sm font-medium text-slate-600">الحالة</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-slate-600 rounded-tl-xl">إجمالي المبلغ</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-slate-600">إجمالي المبلغ</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-slate-600 rounded-tl-xl">الإجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -118,6 +133,15 @@ export default function ShipmentsTab({ shipments, incomingOrders, onAcceptOrder,
                     </span>
                   </td>
                   <td className="px-4 py-4 font-semibold text-slate-800">{shipment.total_amount.toLocaleString('ar-YE')} ر.ي</td>
+                  <td className="px-4 py-4 text-center">
+                    <button 
+                      onClick={() => setPrintingItem({ data: shipment, type: "driver_receipt" })}
+                      className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
+                      title="طباعة السند"
+                    >
+                      <Printer className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {shipments.length === 0 && (
@@ -131,6 +155,16 @@ export default function ShipmentsTab({ shipments, incomingOrders, onAcceptOrder,
           </table>
         </div>
       </div>
+
+      <AnimatePresence>
+        {printingItem && (
+          <InvoiceDocument 
+            data={printingItem.data}
+            type={printingItem.type}
+            onClose={() => setPrintingItem(null)}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

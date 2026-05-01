@@ -79,18 +79,24 @@ export default function FactoryMapTab({ shipments }: FactoryMapTabProps) {
 
   const routes = useMemo(() => {
     return activeShipments.map((shipment, idx) => {
-      const routeParts = (shipment.route || "صنعاء")
-        .split("-")
-        .map((s) => s.trim());
-      const coords: [number, number][] = routeParts.map((city, i) => {
-        const base = CITY_COORDS[city] || CITY_COORDS["صنعاء"];
-        // Add slight offset for visualization
-        return [base[0] + i * 0.005, base[1] + i * 0.008];
-      });
+      // 1. Get Factory Coords (Start)
+      const startCoord: [number, number] = 
+        shipment.factory?.latitude && shipment.factory?.longitude 
+          ? [shipment.factory.latitude, shipment.factory.longitude]
+          : CITY_COORDS[(shipment.factory?.city || "صنعاء")] || CITY_COORDS["صنعاء"];
 
-      if (coords.length < 2) {
-        const base = coords[0] || [15.3694, 44.191];
-        coords.push([base[0] + 0.03, base[1] + 0.04]);
+      // 2. Get Retailer Coords (End)
+      const retailer = (shipment as any).orders?.retailer;
+      const endCoord: [number, number] = 
+        retailer?.latitude && retailer?.longitude
+          ? [retailer.latitude, retailer.longitude]
+          : CITY_COORDS[(retailer?.city || "صنعاء")] || CITY_COORDS["صنعاء"];
+
+      const coords: [number, number][] = [startCoord, endCoord];
+
+      // Add a slight curve/midpoint for visual interest if they are same city
+      if (coords[0][0] === coords[1][0] && coords[0][1] === coords[1][1]) {
+        coords[1] = [coords[1][0] + 0.005, coords[1][1] + 0.005];
       }
 
       return {

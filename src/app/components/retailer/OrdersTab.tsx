@@ -13,9 +13,11 @@ import {
   Calendar,
   ShieldCheck,
   Map as MapIcon,
+  Printer,
 } from "lucide-react";
 import type { Order } from "../../../lib/supabase";
 import RetailerTrackingMap from "./RetailerTrackingMap";
+import InvoiceDocument from "../ui/InvoiceDocument";
 
 interface OrdersTabProps {
   orders: Order[];
@@ -24,6 +26,7 @@ interface OrdersTabProps {
 export default function OrdersTab({ orders = [] }: OrdersTabProps) {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showTracking, setShowTracking] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   const getStatusInfo = (status: string) => {
     switch (status) {
@@ -246,6 +249,23 @@ export default function OrdersTab({ orders = [] }: OrdersTabProps) {
                   </button>
                 </div>
               </div>
+
+              {/* Action Bar for Printing */}
+              {!showTracking && (
+                <div className="px-8 py-3 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
+                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
+                    <ShieldCheck className="w-3 h-3" />
+                    وثيقة معتمدة من C-Route
+                  </span>
+                  <button 
+                    onClick={() => setShowInvoice(true)}
+                    className="flex items-center gap-2 text-xs font-black text-blue-700 hover:text-blue-800 bg-white px-4 py-2 rounded-xl shadow-sm border border-blue-100 transition-all active:scale-95"
+                  >
+                    <Printer className="w-4 h-4" />
+                    طباعة الفاتورة الرسمية
+                  </button>
+                </div>
+              )}
 
               {/* Dynamic Body */}
               <div className="flex-1 overflow-y-auto p-8">
@@ -475,6 +495,17 @@ export default function OrdersTab({ orders = [] }: OrdersTabProps) {
               )}
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Official Printable Invoice */}
+      <AnimatePresence>
+        {showInvoice && selectedOrder && (
+          <InvoiceDocument 
+            data={selectedOrder} 
+            type="retailer_purchase" 
+            onClose={() => setShowInvoice(false)} 
+          />
         )}
       </AnimatePresence>
     </motion.div>

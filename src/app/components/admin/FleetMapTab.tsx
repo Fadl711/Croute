@@ -59,24 +59,33 @@ function MapAutoFit({ coords }: { coords: [number, number][] }) {
 function createIcon(
   color: string,
   IconComp: any,
-  size: number = 32
+  size: number = 42,
+  pulse: boolean = false
 ): L.DivIcon {
   return L.divIcon({
     className: "custom-icon",
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
-    html: `<div style="
-      width:${size}px;height:${size}px;
-      background:${color};
-      border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      box-shadow:0 4px 15px ${color}40;
-      border:3px solid white;
-    ">${renderToString(
-      <IconComp
-        style={{ width: size * 0.5, height: size * 0.5, color: "white" }}
-      />
-    )}</div>`,
+    html: `
+      <div class="relative flex items-center justify-center">
+        ${pulse ? `<div class="absolute inset-0 bg-${color} rounded-full animate-ping opacity-20" style="background-color: ${color}"></div>` : ''}
+        <div style="
+          width:${size}px;height:${size}px;
+          background:${color};
+          border-radius:12px;
+          display:flex;align-items:center;justify-content:center;
+          box-shadow:0 8px 25px ${color}60;
+          border:2px solid rgba(255,255,255,0.8);
+          position: relative;
+          z-index: 10;
+        ">
+          ${renderToString(
+            <IconComp
+              style={{ width: size * 0.5, height: size * 0.5, color: "white" }}
+            />
+          )}
+        </div>
+      </div>`,
   });
 }
 
@@ -99,16 +108,24 @@ export default function FleetMapTab({
   // Generate route coordinates for each shipment
   const routes = useMemo(() => {
     return activeShipments.map((shipment, idx) => {
-      const routeParts = (shipment.route || "صنعاء").split("-").map((s) => s.trim());
-      const coords: [number, number][] = routeParts.map((city, i) => {
-        const base = CITY_COORDS[city] || CITY_COORDS["صنعاء"];
-        return [base[0] + i * 0.01 * (idx + 1), base[1] + i * 0.012 * (idx + 1)];
-      });
+      // 1. Get Factory Coords (Start)
+      const startCoord: [number, number] = 
+        shipment.factory?.latitude && shipment.factory?.longitude 
+          ? [shipment.factory.latitude, shipment.factory.longitude]
+          : CITY_COORDS[(shipment.factory?.city || "صنعاء")] || CITY_COORDS["صنعاء"];
 
-      // If single city, generate two nearby points for a visible route
-      if (coords.length < 2) {
-        const base = coords[0] || [15.3694, 44.191];
-        coords.push([base[0] + 0.05, base[1] + 0.06]);
+      // 2. Get Retailer Coords (End)
+      const retailer = (shipment as any).orders?.retailer;
+      const endCoord: [number, number] = 
+        retailer?.latitude && retailer?.longitude
+          ? [retailer.latitude, retailer.longitude]
+          : CITY_COORDS[(retailer?.city || "صنعاء")] || CITY_COORDS["صنعاء"];
+
+      const coords: [number, number][] = [startCoord, endCoord];
+
+      // Add a slight curve/midpoint for visual interest if they are same city
+      if (coords[0][0] === coords[1][0] && coords[0][1] === coords[1][1]) {
+        coords[1] = [coords[1][0] + 0.005, coords[1][1] + 0.005];
       }
 
       const driverInfo = drivers.find((d) => d.id === shipment.driver_id);
@@ -273,15 +290,21 @@ export default function FleetMapTab({
                           route.coords[route.coords.length - 1][1]) /
                           2,
                       ]}
-                      icon={createIcon(route.color, Truck, 36)}
+                      icon={createIcon(route.color, Truck, 48, true)}
                     >
                       <Popup>
-                        <div style={{ direction: "rtl" }} className="font-sans">
-                          <div className="font-bold">
-                            🚚 {route.driver?.name || "سائق"}
+                        <div style={{ direction: "rtl" }} className="font-sans p-2">
+                          <div className="text-[10px] text-blue-500 font-black tracking-widest uppercase mb-1">Live Tracking</div>
+                          <div className="font-black text-slate-900 text-lg">
+                            {route.driver?.name || "سائق"}
                           </div>
-                          <div className="text-xs">
-                            {route.shipment.route || "في الطريق"}
+                          <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                            <MapPin className="w-3 h-3" />
+                            {route.shipment.route || "قيد التوصيل"}
+                          </div>
+                          <div className="mt-3 pt-3 border-t border-slate-100 flex justify-between items-center">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Current Status</span>
+                            <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase">IN TRANSIT</span>
                           </div>
                         </div>
                       </Popup>

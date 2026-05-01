@@ -10,6 +10,8 @@ import { useOrders } from '../../../hooks/useOrders';
 import { useCreditScore } from '../../../hooks/useCreditScore';
 import type { MarketplaceItem } from '../../../hooks/useMarketplace';
 import type { Order, CreditHistoryEntry } from '../../../lib/supabase';
+import { getActiveRetailerId } from '../../../lib/supabase';
+
 
 // Modular Components
 import MarketTab from './MarketTab';
@@ -57,6 +59,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
   // Data Hooks
   const { items: allProducts = [], loading } = useMarketplace();
   const { createOrder } = useOrders();
+  const activeRetailerId = useMemo(() => getActiveRetailerId(), []);
   const { 
     retailer,
     orders = [], 
@@ -65,8 +68,10 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
     utilizationPct = 0, 
     scoreBreakdown, 
     riskLevel = 'متوسط', 
-    riskColor = 'yellow' 
-  } = useCreditScore();
+    riskColor = 'yellow',
+    refreshOrders,
+    refreshCredit
+  } = useCreditScore(activeRetailerId);
   const creditUsed = retailer?.credit_used || 0;
   const [cart, setCart] = useState<CartItem[]>([]);
 
@@ -185,13 +190,14 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
 
       for (const [factoryId, items] of Object.entries(itemsByFactory) as [string, CartItem[]][]) {
         const total = items.reduce((sum, i) => sum + (i.price * i.cartQuantity), 0);
-        const finalAmount = total * 0.7; // Apply 30% route discount
+        const finalAmount = Math.round(total * 0.7); // Apply 30% route discount and round for bigint
         
         const charCode = items[0].id.charCodeAt(0) + items[0].id.charCodeAt(items[0].id.length - 1);
         const route = allRoutes[charCode % 3];
 
         await createOrder(
           {
+            retailer_id: activeRetailerId,
             factory_id: factoryId,
             total: finalAmount,
             credit_used: finalAmount,
@@ -204,6 +210,9 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
           }))
         );
       }
+
+      await refreshOrders();
+      await refreshCredit();
 
       setCart([]);
       setShowCartDialog(false);
@@ -229,8 +238,8 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
         <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-12">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-[#0B1B3B] rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">
-                <LayoutDashboard className="w-6 h-6 text-white" />
+              <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20 p-2">
+                <img src="/src/assets/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
               </div>
               <span className="text-2xl font-black text-[#0B1B3B] tracking-tight">C-ROUTE <span className="text-[#1A73E8]">RETAIL</span></span>
             </div>

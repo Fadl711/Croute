@@ -195,23 +195,22 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       dir="rtl"
     >
       {/* ═══════════ Sidebar ═══════════ */}
-      <aside className="w-64 bg-[#0B1B3B] text-white flex flex-col fixed inset-y-0 right-0 z-10 shadow-2xl">
-        <div className="p-6 border-b border-white/10">
-          <h1 className="text-xl font-bold flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg">
-              <Shield className="w-6 h-6 text-white" />
+      <aside className="w-72 bg-[#0B1B3B] text-white flex flex-col fixed inset-y-0 right-0 z-50 shadow-[0_0_50px_rgba(0,0,0,0.3)] border-l border-white/5">
+        <div className="p-8 border-b border-white/5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <h1 className="text-xl font-black flex items-center gap-4 relative z-10">
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-900/40 border border-white/10 group-hover:rotate-12 transition-transform duration-500 p-3">
+              <img src="/src/assets/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
             </div>
-            <div>
-              <div className="leading-tight">مركز التحكم</div>
-              <div className="text-[10px] text-blue-300 tracking-widest mt-1 uppercase">
-                C-Route Admin
-              </div>
+            <div className="flex flex-col">
+              <span className="text-white tracking-tight leading-none">C-ROUTE</span>
+              <span className="text-[10px] text-blue-400 font-black tracking-[0.2em] mt-1.5 uppercase">SYSTEM ADMIN</span>
             </div>
           </h1>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
-          <div className="text-[10px] text-white/40 tracking-wider mb-4 px-2">
+        <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
+          <div className="text-[10px] text-white/30 font-black tracking-[0.2em] mb-6 px-4 uppercase">
             القائمة الرئيسية
           </div>
           {tabs.map((tab) => {
@@ -221,22 +220,23 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200 ${
+                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all duration-300 relative group ${
                   isActive
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-medium translate-x-1"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
+                    ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-900/40 font-bold translate-x-1"
+                    : "text-white/50 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <Icon
-                  className={`w-5 h-5 ${
-                    isActive ? "text-white" : "text-white/50"
-                  }`}
-                />
-                <span className="flex-1 text-right">{tab.label}</span>
+                <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                  <Icon
+                    className={`w-5 h-5 ${
+                      isActive ? "text-white" : "text-white/40"
+                    }`}
+                  />
+                </div>
+                <span className="flex-1 text-right tracking-tight">{tab.label}</span>
                 {tab.id === "shipments" &&
-                  shipments.filter((s) => s.status === "pending").length >
-                    0 && (
-                    <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  shipments.filter((s) => s.status === "pending").length > 0 && (
+                    <span className="bg-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-lg shadow-amber-900/20 animate-pulse">
                       {shipments.filter((s) => s.status === "pending").length}
                     </span>
                   )}
@@ -276,16 +276,22 @@ export default function AdminDashboard({ onBack }: AdminDashboardProps) {
       </aside>
 
       {/* ═══════════ Main Content ═══════════ */}
-      <main className="flex-1 mr-64 flex flex-col min-h-screen relative">
+      <main className="flex-1 mr-72 flex flex-col min-h-screen relative">
         {/* Header */}
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl text-slate-800 font-semibold">
-              {tabs.find((t) => t.id === activeTab)?.label}
-            </h2>
-            <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] rounded-md font-medium">
-              إدارة
-            </span>
+        <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-2xl border-b border-slate-200 px-10 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 bg-blue-50 rounded-xl md:hidden">
+              <Shield className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                {tabs.find((t) => t.id === activeTab)?.label}
+              </h2>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">النظام نشط • يمن شيب</span>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-4">
             <button className="relative p-2.5 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors">

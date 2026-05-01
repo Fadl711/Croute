@@ -174,7 +174,8 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
       .insert({
         shipment_number,
         factory_id: factory?.id || getActiveFactoryId(),
-        driver_id: getActiveDriverId(), // Temporary — Admin can reassign
+        driver_id: null, // Admin will assign later via ConsolidationTab
+        order_id: orderId, // Link to the originating order
         route: order.route || "قيد التحديد",
         status: "pending",
         total_amount: order.total,
@@ -258,23 +259,22 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
       dir="rtl"
     >
       {/* Sidebar */}
-      <aside className="w-64 bg-[#0B1B3B] text-white flex flex-col fixed inset-y-0 right-0 z-10 shadow-2xl">
-        <div className="p-6 border-b border-white/10">
-          <h1 className="text-xl font-bold flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#1A73E8] to-[#0A48A3] rounded-xl flex items-center justify-center shadow-lg">
-              <Package className="w-6 h-6 text-white" />
+      <aside className="w-72 bg-[#0B1B3B] text-white flex flex-col fixed inset-y-0 right-0 z-50 shadow-[0_0_50px_rgba(0,0,0,0.3)] border-l border-white/5">
+        <div className="p-8 border-b border-white/5 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <h1 className="text-xl font-black flex items-center gap-4 relative z-10">
+            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-900/40 border border-white/10 group-hover:rotate-12 transition-transform duration-500 p-3">
+              <img src="/src/assets/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
             </div>
-            <div>
-              <div className="leading-tight">بوابة المصنع</div>
-              <div className="text-[10px] text-[#7CC2FF] tracking-widest mt-1 uppercase">
-                C-Route Enterprise
-              </div>
+            <div className="flex flex-col">
+              <span className="text-white tracking-tight leading-none">C-ROUTE</span>
+              <span className="text-[10px] text-blue-400 font-black tracking-[0.2em] mt-1.5 uppercase">FACTORY PORTAL</span>
             </div>
           </h1>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-2">
-          <div className="text-[10px] text-white/40 tracking-wider mb-4 px-2">
+        <nav className="flex-1 px-4 py-8 space-y-2 overflow-y-auto custom-scrollbar">
+          <div className="text-[10px] text-white/30 font-black tracking-[0.2em] mb-6 px-4 uppercase">
             القائمة الرئيسية
           </div>
           {tabs.map((tab) => {
@@ -284,20 +284,22 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200 ${
+                className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all duration-300 relative group ${
                   isActive
-                    ? "bg-[#1A73E8] text-white shadow-lg shadow-[#1A73E8]/20 font-medium translate-x-1"
+                    ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-900/40 font-bold translate-x-1"
                     : "text-white/60 hover:text-white hover:bg-white/5"
                 }`}
               >
-                <Icon
-                  className={`w-5 h-5 ${
-                    isActive ? "text-white" : "text-white/50"
-                  }`}
-                />
-                <span className="flex-1 text-right">{tab.label}</span>
+                <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
+                  <Icon
+                    className={`w-5 h-5 ${
+                      isActive ? "text-white" : "text-white/40"
+                    }`}
+                  />
+                </div>
+                <span className="flex-1 text-right tracking-tight">{tab.label}</span>
                 {tab.id === "shipments" && incomingOrders.length > 0 && (
-                  <span className="bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-amber-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-lg shadow-amber-900/20 animate-pulse">
                     {incomingOrders.length}
                   </span>
                 )}
@@ -318,19 +320,29 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 mr-64 flex flex-col min-h-screen relative">
-        {/* Minimal Header */}
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-xl border-b border-slate-200 px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl text-slate-800 font-semibold">
-              {tabs.find((t) => t.id === activeTab)?.label}
-            </h2>
-            {activeTab === "analytics" && (
-              <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] rounded-md font-medium">
-                مباشر
-              </span>
-            )}
+      <main className="flex-1 mr-72 flex flex-col min-h-screen relative">
+        {/* Header */}
+        <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-2xl border-b border-slate-200 px-10 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-2.5 bg-blue-50 rounded-xl md:hidden">
+              <Package className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                {tabs.find((t) => t.id === activeTab)?.label}
+              </h2>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">المصنع متصل • يمن شيب</span>
+              </div>
+            </div>
           </div>
+          {activeTab === "analytics" && (
+            <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] rounded-md font-medium">
+              مباشر
+            </span>
+          )}
+
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-sm font-semibold text-slate-900">

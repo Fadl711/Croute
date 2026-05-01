@@ -23,6 +23,8 @@ export interface Factory {
   pending_balance: number;
   rating: number;
   tier: string;
+  latitude?: number;
+  longitude?: number;
   created_at: string;
 }
 
@@ -36,6 +38,8 @@ export interface Retailer {
   grace_period_days: number;
   next_payment_date: string | null;
   next_payment_amount: number;
+  latitude?: number;
+  longitude?: number;
   created_at: string;
 }
 
@@ -104,6 +108,11 @@ export interface Shipment {
   status: string;
   total_amount: number;
   created_at: string;
+  // Joins
+  factory?: Factory;
+  orders?: {
+    retailer: Retailer;
+  };
 }
 
 export interface RouteStop {
@@ -192,6 +201,8 @@ export const getActiveRetailerId = () =>
   localStorage.getItem("active_retailer_id") || DEMO_RETAILER_ID;
 export const getActiveDriverId = () =>
   localStorage.getItem("active_driver_id") || DEMO_DRIVER_ID;
+export const getActiveAdminId = () =>
+  localStorage.getItem("active_admin_id") || "admin-system";
 
 export const setActiveFactoryId = (id: string) =>
   localStorage.setItem("active_factory_id", id);
@@ -199,3 +210,5 @@ export const setActiveRetailerId = (id: string) =>
   localStorage.setItem("active_retailer_id", id);
 export const setActiveDriverId = (id: string) =>
   localStorage.setItem("active_driver_id", id);
+export const setActiveAdminId = (id: string) =>
+  localStorage.setItem("active_admin_id", id);

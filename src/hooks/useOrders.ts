@@ -11,14 +11,26 @@ export function useOrders(factoryId?: string, retailerId?: string) {
   const [loading, setLoading] = useState(true);
 
   const fetchOrders = useCallback(async () => {
+    // Determine the scope
+    const activeRetailerId = getActiveRetailerId();
+    
+    // Safety check: If no scope is provided, don't fetch anything (unless it's an intentional global fetch)
+    if (!factoryId && !retailerId && !activeRetailerId) {
+      setOrders([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     let query = supabase
       .from('orders')
       .select(`
         *,
+        retailer:retailers(name),
+        factory:factories(name),
         order_items (
           *,
-          products (*)
+          product:products (*)
         )
       `);
     
@@ -27,8 +39,7 @@ export function useOrders(factoryId?: string, retailerId?: string) {
     } else if (retailerId) {
       query = query.eq("retailer_id", retailerId);
     } else {
-      // Default to dynamic active ID
-      query = query.eq("retailer_id", getActiveRetailerId());
+      query = query.eq("retailer_id", activeRetailerId);
     }
 
     const { data } = await query.order('created_at', { ascending: false });
@@ -70,6 +81,7 @@ export function useOrders(factoryId?: string, retailerId?: string) {
   // For Retailer: Submit a new order
   const createOrder = async (orderData: Partial<Order>, items: Partial<OrderItem>[]) => {
     const order_number = `ORD-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+    const retailerId = orderData.retailer_id || getActiveRetailerId();
     
     // 1. Insert order
     const { data: order, error: orderError } = await supabase
@@ -77,7 +89,7 @@ export function useOrders(factoryId?: string, retailerId?: string) {
       .insert({
         ...orderData,
         order_number,
-        retailer_id: orderData.retailer_id || getActiveRetailerId(),
+        retailer_id: retailerId,
         status: "pending_factory",
       })
       .select()
@@ -98,6 +110,30 @@ export function useOrders(factoryId?: string, retailerId?: string) {
         console.error('Error creating order items:', itemsError);
         throw itemsError;
       }
+    }
+
+    // 3. Update Retailer Credit Balance
+    const totalOrder = Math.round(orderData.total || 0);
+    const { data: retailer } = await supabase
+      .from('retailers')
+      .select('credit_used')
+      .eq('id', retailerId)
+      .single();
+    
+    if (retailer) {
+      await supabase
+        .from('retailers')
+        .update({ credit_used: retailer.credit_used + totalOrder })
+        .eq('id', retailerId);
+      
+      // Log in history
+      await supabase.from('credit_history').insert({
+        retailer_id: retailerId,
+        type: 'order',
+        amount: totalOrder,
+        description: `طلب جديد رقم ${order_number}`,
+        balance_after: retailer.credit_used + totalOrder
+      });
     }
     
     return order;

@@ -24,9 +24,11 @@ export function useCreditScore(
       .from("orders")
       .select(`
         *,
+        retailer:retailers(name),
+        factory:factories(name),
         order_items (
           *,
-          products (*)
+          product:products (*)
         )
       `)
       .eq("retailer_id", retailerId)
@@ -52,9 +54,10 @@ export function useCreditScore(
     load();
   }, [fetchRetailer, fetchOrders, fetchCreditHistory]);
 
-  // Real-time subscription for retailer changes
+  // Real-time subscriptions
   useEffect(() => {
-    const channel = supabase
+    // Real-time subscription for retailer changes
+    const retailerChannel = supabase
       .channel('retailer-credit')
       .on(
         'postgres_changes',
@@ -70,10 +73,28 @@ export function useCreditScore(
       )
       .subscribe();
 
+    // Real-time subscription for orders
+    const ordersChannel = supabase
+      .channel('retailer-orders')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `retailer_id=eq.${retailerId}`,
+        },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(retailerChannel);
+      supabase.removeChannel(ordersChannel);
     };
-  }, [retailerId]);
+  }, [retailerId, fetchOrders]);
 
   // Derived credit metrics
   const creditAvailable = retailer
@@ -120,5 +141,6 @@ export function useCreditScore(
     riskLevel,
     riskColor,
     refreshCredit: fetchRetailer,
+    refreshOrders: fetchOrders
   };
 }

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import {
-  Navigation, DollarSign, BarChart3, FileText, ChevronLeft, Zap, X, QrCode, CheckCircle, Camera
+  Navigation, DollarSign, BarChart3, FileText, ChevronLeft, Zap, X, QrCode, CheckCircle, Camera, Printer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { useDriverRoute } from '../../../hooks/useDriverRoute';
+import InvoiceDocument from '../ui/InvoiceDocument';
 
 // Modular Components
 import RouteTab from './RouteTab';
@@ -21,6 +22,7 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
   const [showProofDialog, setShowProofDialog] = useState(false);
   const [confirmingDelivery, setConfirmingDelivery] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
 
   // Data Hook
   const {
@@ -90,8 +92,8 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
             </button>
             <div className="h-8 w-px bg-slate-200" />
             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 bg-[#0B1B3B] rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">
-                  <Navigation className="w-6 h-6 text-white" />
+               <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20 p-2">
+                  <img src="/src/assets/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
                </div>
                <span className="text-xl font-black text-[#0B1B3B] tracking-tight">C-ROUTE <span className="text-amber-500">DRIVER</span></span>
             </div>
@@ -102,6 +104,15 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
                <Zap className="w-4 h-4 text-amber-500" />
                <span className="text-xs font-bold">كفاءة المسار: {routeStats.efficiency}%</span>
             </div>
+            {activeShipment && (
+              <button 
+                onClick={() => setShowInvoice(true)}
+                className="hidden lg:flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl border border-blue-500 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+              >
+                <Printer className="w-4 h-4" />
+                <span className="text-xs font-bold">طباعة السند</span>
+              </button>
+            )}
             <div className="flex items-center gap-3 pr-2 border-r border-slate-200">
                 <div className="text-left hidden sm:block">
                   <div className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
@@ -267,6 +278,16 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+      {/* Official Printable Invoice / Delivery Receipt */}
+      <AnimatePresence>
+        {showInvoice && activeShipment && (
+          <InvoiceDocument 
+            data={activeShipment} 
+            type="driver_receipt" 
+            onClose={() => setShowInvoice(false)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

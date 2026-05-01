@@ -1,172 +1,86 @@
-# 🤖 C-Route Project Context (AI Instructions)
+# 🤖 C-Route Project Context (AI System Prompt)
 
-> **CRITICAL FOR AI:** Read this file FIRST before ANY work. This defines the project identity, architecture, and non-negotiable rules. Then read `CONTEXT.md` for current progress and session-specific knowledge.
-
----
-
-## 📌 Project Identity
-
-**C-Route** is a B2B **supply chain + clearinghouse + logistics** platform for the Yemeni wholesale market.  
-Built for **Salam Hack 2026** hackathon — the UI must look like a world-class enterprise SaaS (Stripe/Shopify tier).
-
-### The Four Actors
-
-| Actor | Arabic | Dashboard File | Description |
-|-------|--------|----------------|-------------|
-| **Factory** | المصنع | `FactoryDashboard.tsx` | Manages products, accepts orders, triggers shipments |
-| **Retailer** | التاجر | `RetailerDashboard.tsx` | Browses marketplace, orders products, tracks deliveries |
-| **Driver** | السائق | `DriverDashboard.tsx` | Picks up from factory, delivers to retailer, confirms delivery |
-| **Admin** | المدير | `AdminDashboard.tsx` | Monitors GMV, settlements, risk, audit trail |
-
-### The Golden Path (End-to-End Flow)
-```
-Retailer orders → Factory approves → Shipment + Route Stops created →
-Driver picks up → Driver delivers → Settlement Cascade fires →
-(Transaction created, Factory paid, Driver paid, Platform stats updated)
-```
+> **CRITICAL FOR AI:** Read this file FIRST before ANY work. This document defines the project's core identity, overarching architecture, and non-negotiable technical rules. After reading this, read `CONTEXT.md` for the current session's progress.
 
 ---
 
-## 🛠 Tech Stack (DO NOT CHANGE)
+## 📌 1. Project Identity & Vision
 
-| Layer | Technology |
-|-------|------------|
-| Framework | React 18 + Vite |
-| Language | TypeScript (`.tsx`, `.ts`) |
-| Styling | Tailwind CSS |
-| Animations | `motion/react` (Framer Motion) |
-| Icons | `lucide-react` |
-| Charts | `recharts` |
-| UI Primitives | `@radix-ui/react-dialog` |
-| Backend/DB | **Supabase** (PostgreSQL + Realtime) |
-| Direction | RTL (`dir="rtl"`) — Arabic interface |
+**C-Route (مسار الأعمال)** is a B2B **supply chain, clearinghouse, and logistics** platform specifically tailored for the Yemeni wholesale market.  
+**Target:** Built to win the **Salam Hack 2026** hackathon. 
+**Aesthetic Requirement:** The UI must look like a world-class enterprise SaaS (Stripe/Shopify tier). "Minimum Viable Product" does not mean ugly; use Glassmorphism, deep shadows, and fluid animations.
+
+### The Four Core Actors
+1. 🏭 **Factory (المصنع):** `FactoryDashboard.tsx`. Manages product catalog, receives incoming orders from retailers, approves them, and monitors outgoing shipments on a live radar.
+2. 🛒 **Retailer (التاجر):** `RetailerDashboard.tsx`. Browses the B2B marketplace, adds products to cart, checks out using an internal credit line, and tracks order statuses.
+3. 🚚 **Driver (السائق):** `DriverDashboard.tsx`. Follows active routes, scans barcodes at pickup (factory) and drop-off (retailer), and manages their earnings.
+4. 🌐 **Admin (المدير):** `AdminDashboard.tsx`. The platform owner. Monitors real-time GMV, active fleet radar, transaction settlements, and system risk levels.
 
 ---
 
-## 📁 Project Structure
+## 🛠 2. Technology Stack (DO NOT CHANGE)
 
-```
-d:\laragon\www\c-route\
-├── src/
-│   ├── app/
-│   │   ├── App.tsx                    # Root: role-based routing
-│   │   └── components/
-│   │       ├── RoleSelection.tsx      # Landing page / role picker
-│   │       ├── RetailerDashboard.tsx  # 🛒 Retailer main
-│   │       ├── FactoryDashboard.tsx   # 🏭 Factory main
-│   │       ├── DriverDashboard.tsx    # 🚚 Driver main
-│   │       ├── AdminDashboard.tsx     # 🌐 Admin main
-│   │       ├── SupplyChainIntel.tsx   # Supply chain visualizations
-│   │       ├── retailer/             # Retailer sub-components
-│   │       │   ├── MarketTab.tsx
-│   │       │   ├── OrdersTab.tsx
-│   │       │   ├── AnalyticsTab.tsx
-│   │       │   ├── WalletTab.tsx
-│   │       │   ├── CartDialog.tsx
-│   │       │   ├── FilterSidebar.tsx
-│   │       │   ├── ProductCard.tsx
-│   │       │   └── utils.ts
-│   │       ├── factory/              # Factory sub-components
-│   │       │   ├── AnalyticsTab.tsx
-│   │       │   ├── ProductsTab.tsx
-│   │       │   ├── ShipmentsTab.tsx
-│   │       │   ├── WalletTab.tsx
-│   │       │   ├── AddProductModal.tsx
-│   │       │   ├── CashoutModal.tsx
-│   │       │   └── constants.ts
-│   │       ├── driver/               # Driver sub-components
-│   │       │   ├── RouteTab.tsx
-│   │       │   ├── EarningsTab.tsx
-│   │       │   └── HistoryTab.tsx
-│   │       └── admin/                # Admin sub-components
-│   │           ├── OverviewTab.tsx
-│   │           ├── TransactionsTab.tsx
-│   │           ├── RiskTab.tsx
-│   │           ├── AdminAnalyticsTab.tsx
-│   │           └── AuditTab.tsx
-│   ├── hooks/                        # All Supabase data hooks
-│   │   ├── useCreditScore.ts         # Retailer credit metrics
-│   │   ├── useDriverRoute.ts         # Driver route + settlement logic ⭐
-│   │   ├── useMarketplace.ts         # Product listing for retailer
-│   │   ├── useOrders.ts              # Order creation + fetching
-│   │   ├── useProducts.ts            # Factory product CRUD
-│   │   ├── useShipments.ts           # Factory shipment listing
-│   │   ├── useSupplyChainIntel.ts    # Supply chain analytics
-│   │   ├── useTransactions.ts        # Admin transaction feed
-│   │   └── useWallet.ts              # Factory wallet operations
-│   └── lib/
-│       └── supabase.ts               # Supabase client + ALL TypeScript interfaces
-```
+| Layer | Technology | Notes |
+|-------|------------|-------|
+| **Core** | React 18 + Vite + TypeScript | Strict typing is enforced via `src/lib/supabase.ts`. |
+| **Styling** | Tailwind CSS | Primary colors: Navy (`#0B1B3B`), Blue (`#1A73E8`). |
+| **Animations** | `motion/react` | Use `AnimatePresence` for smooth tab switching. |
+| **Icons** | `lucide-react` | Do not use other icon libraries. |
+| **Maps** | `react-leaflet` + `leaflet` | **RESTRICTED USE:** Only in `FleetMapTab` and `FactoryMapTab`. |
+| **Backend** | Supabase | PostgreSQL + Realtime WebSockets. |
+| **Localization**| RTL (`dir="rtl"`) | The entire interface is in Arabic. |
 
 ---
 
-## 🗄 Database Schema (Supabase)
+## 🏗 3. Architectural Rules & Best Practices
 
-All interfaces are defined in `src/lib/supabase.ts`. Key tables:
-
-| Table | Purpose |
-|-------|---------|
-| `factories` | Factory profiles + balance |
-| `retailers` | Retailer profiles + credit score/limit |
-| `drivers` | Driver profiles + balance + stats |
-| `products` | Factory product catalog |
-| `orders` | Retailer → Factory orders |
-| `order_items` | Line items for each order |
-| `shipments` | Logistics shipments linking factory → driver |
-| `route_stops` | Individual pickup/dropoff stops per shipment |
-| `transactions` | Financial settlements (from → to + fee) |
-| `credit_history` | Retailer credit usage log |
-| `audit_log` | System-wide audit trail |
-| `platform_stats` | Aggregated platform KPIs (single row, id=1) |
-| `cashout_requests` | Factory withdrawal requests |
-
-### Demo IDs (No Auth — Demo Mode)
-```typescript
-DEMO_FACTORY_ID  = 'a1000000-0000-0000-0000-000000000001'
-DEMO_RETAILER_ID = 'b1000000-0000-0000-0000-000000000001'
-DEMO_DRIVER_ID   = 'c1000000-0000-0000-0000-000000000001'
-```
+1. **Modular UI:** Dashboards are entry points. All complex logic and UI must be broken down into sub-components inside `src/app/components/{role}/`. Never write 500+ line monolithic files.
+2. **Hook-Driven Data:** ALL Supabase queries must reside in `src/hooks/use*.ts`. **Never** write raw `supabase.from()` calls inside UI components.
+3. **Real-time Synchronization:** Every data hook must subscribe to Supabase Realtime (`postgres_changes`) to ensure the UI updates instantly across all users when the database changes.
+4. **Financial Safety:** All financial columns in Supabase are `bigint`. Whenever doing math (e.g., deducting 2% platform fees), you MUST use `Math.round()` before inserting/updating to avoid decimal truncation errors that crash Postgres.
+5. **Currency:** Always format numbers as Yemeni Rial using `.toLocaleString('ar-YE')` + ` ر.ي`.
 
 ---
 
-## 📐 Architecture Rules (NON-NEGOTIABLE)
+## 🔄 4. The "Golden Path" (End-to-End Flow)
 
-1. **Modular Components:** Every dashboard is split into tab-level sub-components inside `components/{role}/`. Never create monolithic 500+ line components.
-2. **Custom Hooks Only:** ALL Supabase queries go through `src/hooks/use*.ts`. Never write raw `supabase.from()` inside UI components.
-3. **Real-time First:** Every hook that fetches data must also subscribe to Supabase Realtime channels for live updates.
-4. **Enterprise Layouts:** Factory and Admin use **sidebar** navigation. Retailer uses top tabs with floating cart. Driver uses top tabs.
-5. **RTL Always:** All root `<div>` elements must have `dir="rtl"`.
-
----
-
-## ⚖️ "Hybrid Reality" Rule
-
-- **Core Operations MUST be Real:** Shipments, Wallets, Settlements, Orders, Route Stops — all from Supabase.
-- **Complex Charts CAN be Mocked:** Historical trend charts, pie breakdowns — mock data is acceptable.
-- **Admin Stats:** `platform_stats` table (row id=1) is real and gets updated by the settlement cascade.
+Understanding this flow is critical. It is the backbone of the application:
+1. **Order Creation:** Retailer checks out → `useOrders.createOrder()` writes to `orders` and `order_items`.
+2. **Order Approval:** Factory clicks "اعتماد" → `handleAcceptOrder()` updates order status to `approved`, creates a `shipments` row, and creates two `route_stops` (pickup & dropoff).
+3. **Logistics Execution:** Driver completes the stops → triggers `confirmDelivery()` in `useDriverRoute.ts`.
+4. **The Settlement Cascade:** When the final stop is completed, `confirmDelivery()` automatically:
+   - Deducts from Retailer's credit line.
+   - Credits the Factory (minus platform fee).
+   - Credits the Driver's earnings.
+   - Creates a formal `transactions` record.
+   - Updates `platform_stats` (GMV, fees).
 
 ---
 
-## 🎨 UI/UX Non-Negotiables
+## 🪪 5. Identity Management (Demo Mode)
 
-- Primary colors: `#0B1B3B` (Dark Navy), `#1A73E8` (Google Blue)
-- Use `backdrop-blur`, glass borders, subtle shadows for premium feel
-- `tabular-nums` on ALL numeric displays
-- Currency: Yemeni Rial (`ر.ي`), format with `.toLocaleString('ar-YE')`
-- Animations via `motion/react` (AnimatePresence for tab transitions)
-- Icons exclusively from `lucide-react`
+We do not use Supabase Auth yet. Instead, we use a robust `localStorage` system to allow seamless role-switching during demos.
 
----
+**Helper Functions (Use these, do NOT hardcode IDs):**
+Located in `src/lib/supabase.ts`:
+- `getActiveAdminId()` / `setActiveAdminId(id)`
+- `getActiveRetailerId()` / `setActiveRetailerId(id)`
+- `getActiveFactoryId()` / `setActiveFactoryId(id)`
+- `getActiveDriverId()` / `setActiveDriverId(id)`
 
-## 🚫 Known Constraints & Gotchas
-
-1. **DO NOT use `react-leaflet`** — it causes build failures. Map visualizations use SVG-based simulations instead.
-2. **`useOrders` is dual-mode:** Pass `factoryId` for factory view (pending orders only) or leave empty for retailer view (all orders).
-3. **`useCreditScore`** is the source for retailer's `orders`, `creditHistory`, `creditAvailable`, etc. The retailer dashboard must use this hook, NOT `useOrders`, for displaying order data.
-4. **Settlement logic lives in `useDriverRoute.ts` → `confirmDelivery()`** — this is the most critical function in the entire system.
+*If a hook fails with "ReferenceError: getActiveX is not defined", you forgot to import it from `lib/supabase.ts`.*
 
 ---
 
-## 🚀 Mission
+## 🗄 6. Database Schema Summary
 
-Win **Salam Hack 2026**. The system must demonstrate a fully automated B2B supply chain with real-time financial settlement, beautiful enterprise UI, and a compelling live demo.
+All TypeScript interfaces matching this schema are in `src/lib/supabase.ts`.
+- `factories` (Includes `latitude`, `longitude`)
+- `retailers` (Includes `latitude`, `longitude`, `credit_score`)
+- `drivers`
+- `products`
+- `orders` & `order_items`
+- `shipments` & `route_stops` (The logistics layer)
+- `transactions` & `credit_history` (The financial ledger)
+- `platform_stats` (Row ID=1, global KPIs)
+- `audit_log`

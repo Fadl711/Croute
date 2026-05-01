@@ -24,7 +24,18 @@ export function useDriverRoute(driverId: string = getActiveDriverId()) {
     // Get all pending or in_transit shipments for this driver
     const { data: shipmentsData } = await supabase
       .from('shipments')
-      .select('*')
+      .select(`
+        *,
+        factory:factories(name),
+        driver:drivers(name),
+        orders(
+          retailer:retailers(name),
+          order_items(
+            *,
+            product:products(*)
+          )
+        )
+      `)
       .eq('driver_id', driverId)
       .in('status', ['pending', 'in_transit'])
       .order('created_at', { ascending: false });
@@ -114,70 +125,104 @@ export function useDriverRoute(driverId: string = getActiveDriverId()) {
           .eq('id', nextStop.id);
       }
 
-      // 3. Check if all stops are completed → mark shipment as delivered
-      const remainingPending = stops.filter(
+      // 3. Check if all stops for THIS shipment are completed → mark shipment as delivered
+      const currentStop = stops.find(s => s.id === stopId);
+      if (!currentStop) return { success: true };
+      
+      const shipmentId = currentStop.shipment_id;
+      const allShipmentStops = stops.filter(s => s.shipment_id === shipmentId);
+      const remainingForShipment = allShipmentStops.filter(
         (s) => s.id !== stopId && s.status !== 'completed'
       );
-      if (remainingPending.length <= 1) {
-        // Only the next stop or none left
-        if (remainingPending.length === 0) {
+
+      if (remainingForShipment.length === 0) {
+        // Fetch full shipment data to ensure we have the linked order_id and other fields
+        const { data: shipment } = await supabase
+          .from('shipments')
+          .select('*')
+          .eq('id', shipmentId)
+          .single();
+
+        if (shipment) {
           await supabase
             .from('shipments')
             .update({ status: 'delivered' })
-            .eq('id', activeShipment?.id);
+            .eq('id', shipmentId);
 
           // ✨ TRIGGER SETTLEMENT ✨
-          if (activeShipment) {
-            // Find the actual retailer who placed the order for this shipment
-            const { data: relatedOrder } = await supabase
+          if ((shipment as any).order_id) {
+            // Find the specific order linked to this shipment
+            const { data: order } = await supabase
               .from('orders')
-              .select('retailer_id')
-              .eq('factory_id', activeShipment.factory_id)
-              .in('status', ['approved', 'in_transit'])
-              .limit(1)
+              .select('retailer_id, order_number')
+              .eq('id', (shipment as any).order_id)
               .single();
 
-            const actualRetailerId = relatedOrder?.retailer_id || 'unknown';
+            const actualRetailerId = order?.retailer_id || 'unknown';
 
             // 1. Transaction: Retailer -> Factory
             const tx_number = `TX-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
             await supabase.from('transactions').insert({
               tx_number,
               from_entity: actualRetailerId,
-              to_entity: activeShipment.factory_id,
-              amount: activeShipment.total_amount * 0.98,
-              fee: activeShipment.total_amount * 0.02,
+              to_entity: shipment.factory_id,
+              amount: Math.round(shipment.total_amount * 0.98),
+              fee: Math.round(shipment.total_amount * 0.02),
               type: 'settlement',
               status: 'completed',
-              related_shipment_id: activeShipment.id,
+              related_shipment_id: shipment.id,
             });
 
             // 2. Add amount to Factory Balance
             const { data: factory } = await supabase
               .from('factories')
               .select('balance')
-              .eq('id', activeShipment.factory_id)
+              .eq('id', shipment.factory_id)
               .single();
             if (factory) {
               await supabase
                 .from('factories')
-                .update({ balance: factory.balance + activeShipment.total_amount * 0.98 })
-                .eq('id', activeShipment.factory_id);
+                .update({ balance: Math.round(factory.balance + shipment.total_amount * 0.98) })
+                .eq('id', shipment.factory_id);
             }
 
-            // 3. Update driver balance
-            const totalDriverEarnings = stops.reduce((sum, s) => sum + s.earnings, 0);
+            // 3. Update Retailer: Move used credit to "paid" or just reduce it
+            const { data: retailer } = await supabase
+              .from('retailers')
+              .select('credit_used')
+              .eq('id', actualRetailerId)
+              .single();
+            
+            if (retailer) {
+              const newCreditUsed = Math.max(0, Math.round(retailer.credit_used - shipment.total_amount));
+              await supabase
+                .from('retailers')
+                .update({ credit_used: newCreditUsed })
+                .eq('id', actualRetailerId);
+              
+              // Add credit history entry
+              await supabase.from('credit_history').insert({
+                retailer_id: actualRetailerId,
+                type: 'payment',
+                amount: shipment.total_amount,
+                description: `تسوية شحنة رقم ${shipment.shipment_number}`,
+                balance_after: newCreditUsed
+              });
+            }
+
+            // 4. Update driver balance
+            const shipmentEarnings = allShipmentStops.reduce((sum, s) => sum + s.earnings, 0);
             if (driver) {
               await supabase
                 .from('drivers')
                 .update({
-                  balance: driver.balance + totalDriverEarnings,
-                  total_trips: driver.total_trips + 1,
+                  balance: Math.round(driver.balance + shipmentEarnings),
+                  total_trips: (driver.total_trips || 0) + 1,
                 })
                 .eq('id', driver.id);
             }
 
-            // 4. Update platform stats
+            // 5. Update platform stats
             const { data: stats } = await supabase
               .from('platform_stats')
               .select('*')
@@ -187,24 +232,20 @@ export function useDriverRoute(driverId: string = getActiveDriverId()) {
               await supabase
                 .from('platform_stats')
                 .update({
-                  gmv: stats.gmv + activeShipment.total_amount,
-                  platform_fee_today: stats.platform_fee_today + activeShipment.total_amount * 0.02,
-                  total_transactions: stats.total_transactions + 1,
-                  daily_settlements: stats.daily_settlements + 1,
+                  gmv: stats.gmv + shipment.total_amount,
+                  platform_fee_today: Math.round(stats.platform_fee_today + shipment.total_amount * 0.02),
+                  total_transactions: (stats.total_transactions || 0) + 1,
+                  daily_settlements: (stats.daily_settlements || 0) + 1,
                   updated_at: new Date().toISOString(),
                 })
                 .eq('id', 1);
             }
 
-            // 5. ✅ Sync order status → 'delivered'
-            if (relatedOrder) {
-              await supabase
-                .from('orders')
-                .update({ status: 'delivered' })
-                .eq('factory_id', activeShipment.factory_id)
-                .eq('retailer_id', actualRetailerId)
-                .in('status', ['approved', 'in_transit']);
-            }
+            // 6. ✅ Sync specific order status → 'delivered'
+            await supabase
+              .from('orders')
+              .update({ status: 'delivered' })
+              .eq('id', (shipment as any).order_id);
           }
         }
       }

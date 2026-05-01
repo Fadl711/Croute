@@ -1,24 +1,38 @@
-import { useState } from 'react';
+import { HashRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import RoleSelection from './components/RoleSelection';
 import RetailerDashboard from './components/retailer/RetailerDashboard';
 import FactoryDashboard from './components/factory/FactoryDashboard';
 import DriverDashboard from './components/driver/DriverDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
 
-export default function App() {
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
+function AppContent() {
+  const navigate = useNavigate();
 
   const handleBackToRoleSelection = () => {
-    setSelectedRole(null);
+    navigate('/');
+  };
+
+  const handleSelectRole = (role: string) => {
+    navigate(`/${role}`);
   };
 
   return (
     <div className="size-full">
-      {!selectedRole && <RoleSelection onSelectRole={setSelectedRole} />}
-      {selectedRole === 'retailer' && <RetailerDashboard onBack={handleBackToRoleSelection} />}
-      {selectedRole === 'factory' && <FactoryDashboard onBack={handleBackToRoleSelection} />}
-      {selectedRole === 'driver' && <DriverDashboard onBack={handleBackToRoleSelection} />}
-      {selectedRole === 'admin' && <AdminDashboard onBack={handleBackToRoleSelection} />}
+      <Routes>
+        <Route path="/" element={<RoleSelection onSelectRole={handleSelectRole} />} />
+        <Route path="/retailer" element={<RetailerDashboard onBack={handleBackToRoleSelection} />} />
+        <Route path="/factory" element={<FactoryDashboard onBack={handleBackToRoleSelection} />} />
+        <Route path="/driver" element={<DriverDashboard onBack={handleBackToRoleSelection} />} />
+        <Route path="/admin" element={<AdminDashboard onBack={handleBackToRoleSelection} />} />
+      </Routes>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }

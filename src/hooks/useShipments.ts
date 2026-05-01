@@ -14,13 +14,30 @@ export function useShipments(
   const [loading, setLoading] = useState(true);
 
   const fetchShipments = useCallback(async () => {
+    // Admin sees everything; Factory sees only its own
+    if (!fetchAll && !factoryId) {
+      setShipments([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     let query = supabase
       .from("shipments")
-      .select("*")
+      .select(`
+        *,
+        factory:factories(name),
+        driver:drivers(name),
+        orders(
+          retailer:retailers(name),
+          order_items(
+            *,
+            product:products(*)
+          )
+        )
+      `)
       .order("created_at", { ascending: false });
 
-    // Admin sees everything; Factory sees only its own
     if (!fetchAll && factoryId) {
       query = query.eq("factory_id", factoryId);
     }

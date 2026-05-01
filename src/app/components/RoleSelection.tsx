@@ -22,6 +22,7 @@ import {
   setActiveFactoryId,
   setActiveRetailerId,
   setActiveDriverId,
+  setActiveAdminId,
 } from "../../lib/supabase";
 
 interface RoleSelectionProps {
@@ -139,6 +140,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
     if (pickingIdentity === "factory") setActiveFactoryId(id);
     if (pickingIdentity === "retailer") setActiveRetailerId(id);
     if (pickingIdentity === "driver") setActiveDriverId(id);
+    if (pickingIdentity === "admin") setActiveAdminId(id);
 
     const roleToEnter = pickingIdentity;
     setPickingIdentity(null);
@@ -165,8 +167,12 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         {/* Header */}
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#1A73E8] flex items-center justify-center shadow-lg">
-              <Activity className="w-5 h-5 text-white" />
+            <div className="w-20 h-20 rounded-2xl bg-white p-3 flex items-center justify-center shadow-2xl shadow-blue-600/20">
+              <img
+                src="/src/assets/logo.png"
+                alt="C-Route Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <div className="tracking-[0.15em] font-black text-lg">
@@ -183,7 +189,7 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         <div className="relative z-10">
           <h1 className="text-3xl md:text-5xl font-black leading-tight mb-4">
             البنية التشغيلية <br />
-            <span className="text-white/40">لتجارة الجملة</span>
+            <span className="text-white/40">لاسلاسل الإمداد</span>
           </h1>
           <p className="text-white/50 text-sm max-w-sm font-medium leading-relaxed">
             منظومة تقنية تُوحّد سلاسل الإمداد: شحنٌ ذكي، تسوياتٌ فورية، وتمويلٌ
