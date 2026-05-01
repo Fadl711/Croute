@@ -185,11 +185,11 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
       <nav className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200">
         <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-12">
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20 p-2">
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-12 md:w-14 md:h-14 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/10 p-1.5">
                 <img src="/src/assets/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="text-2xl font-black text-[#0B1B3B] tracking-tight">C-ROUTE <span className="text-[#1A73E8]">RETAIL</span></span>
+              <span className="hidden md:inline text-2xl font-black text-[#0B1B3B] tracking-tight">C-ROUTE <span className="text-[#1A73E8]">RETAIL</span></span>
             </div>
 
             <div className="hidden md:flex items-center gap-1">
@@ -291,10 +291,10 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         onClick={() => setShowCartDialog(true)}
-        className="fixed bottom-8 left-8 bg-[#1A73E8] text-white p-5 rounded-full shadow-2xl z-50 flex items-center gap-3 group"
+        className="fixed bottom-24 md:bottom-8 left-6 md:left-8 bg-[#1A73E8] text-white p-4 md:p-5 rounded-full shadow-2xl z-50 flex items-center gap-2 md:gap-3 group"
       >
         <div className="relative">
-          <ShoppingBag className="w-7 h-7" />
+          <ShoppingBag className="w-6 h-6 md:w-7 md:h-7" />
           {cartItemsCount > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce">
               {cartItemsCount}
@@ -303,7 +303,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
         </div>
         <div className="flex flex-col items-start pr-2 border-r border-white/20 text-right">
           <span className="text-[10px] text-blue-100 font-bold uppercase leading-none mb-1">عرض السلة</span>
-          <span className="text-sm font-black tabular-nums">{(cartTotal * 0.7).toLocaleString()} ر.ي</span>
+          <span className="text-xs md:text-sm font-black tabular-nums">{(cartTotal * 0.7).toLocaleString()} ر.ي</span>
         </div>
       </motion.button>
 

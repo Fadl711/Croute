@@ -89,27 +89,32 @@ export default function InvoiceDocument({ data, type, onClose }: InvoiceDocument
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-xl p-4 md:p-8 overflow-y-auto print:p-0 print:bg-white print:backdrop-blur-none print:relative print:z-0 print:block">
       {/* Action Buttons (Hidden on Print) */}
-      <div className="fixed top-6 left-6 flex gap-3 print:hidden z-[110]">
+      <div className="fixed top-4 right-4 md:top-6 md:left-6 flex flex-col md:flex-row gap-3 print:hidden z-[110]">
         <button
           onClick={handlePrint}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 shadow-2xl shadow-blue-600/40 transition-all active:scale-95 text-lg"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 md:px-8 py-3 md:py-4 rounded-2xl font-black flex items-center gap-2 shadow-2xl shadow-blue-600/40 transition-all active:scale-95 text-sm md:text-lg order-2 md:order-1"
         >
-          <Printer className="w-6 h-6" />
-          طباعة الفاتورة الرسمية
+          <Printer className="w-5 h-5 md:w-6 md:h-6" />
+          طباعة الفاتورة
         </button>
         <button
           onClick={onClose}
-          className="bg-white/10 hover:bg-white/20 text-white p-4 rounded-2xl backdrop-blur-md transition-all active:scale-95 border border-white/10"
+          className="bg-white/10 hover:bg-white/20 text-white p-3 md:p-4 rounded-2xl backdrop-blur-md transition-all active:scale-95 border border-white/10 self-end md:self-auto order-1 md:order-2"
         >
-          <X className="w-8 h-8" />
+          <X className="w-6 h-6 md:w-8 md:h-8" />
         </button>
       </div>
 
       <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        className="relative shadow-[0_50px_100px_rgba(0,0,0,0.5)] rounded-none print:shadow-none print:m-0"
+        className="relative shadow-[0_50px_100px_rgba(0,0,0,0.5)] rounded-none print:shadow-none print:m-0 origin-top transform-gpu"
         dir="rtl"
+        style={{
+          scale: 'clamp(0.2, calc(100vw / 210mm * 0.75), 0.85)',
+          maxWidth: '210mm',
+          marginTop: '2rem'
+        }}
       >
         <InvoiceTemplate data={data} type={type} />
       </motion.div>

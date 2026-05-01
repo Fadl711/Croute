@@ -152,70 +152,86 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
 
   return (
     <div
-      className="h-screen w-full flex flex-col xl:flex-row bg-[#0B1B3B] overflow-hidden"
+      className="min-h-screen w-full flex flex-col xl:flex-row bg-[#0B1B3B] overflow-x-hidden relative"
       dir="rtl"
       style={{ fontFamily: '"IBM Plex Sans Arabic", system-ui, sans-serif' }}
     >
+      {/* Background Decorative Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-400/5 blur-[120px] rounded-full pointer-events-none" />
       {/* 
         ================================================================
         RIGHT PANEL: BRANDING (Fixed 100vh)
         ================================================================
       */}
-      <div className="relative w-full xl:w-[40%] h-[35vh] xl:h-screen p-6 md:p-10 lg:p-12 flex flex-col justify-between text-white shrink-0">
+      <div className="relative w-full xl:w-[38%] min-h-[40vh] xl:h-screen p-8 md:p-12 lg:p-16 flex flex-col justify-between text-white shrink-0 overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-full bg-[#1A73E8]/5 pointer-events-none" />
 
         {/* Header */}
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-20 h-20 rounded-2xl bg-white p-3 flex items-center justify-center shadow-2xl shadow-blue-600/20">
+        <div className="relative z-10 flex items-center justify-between mb-12 xl:mb-0">
+          <div className="flex items-center gap-4">
+            <motion.div 
+              whileHover={{ rotate: 10, scale: 1.05 }}
+              className="w-14 h-14 md:w-24 md:h-24 rounded-3xl bg-white p-3 md:p-4 flex items-center justify-center shadow-[0_20px_50px_rgba(26,115,232,0.3)] border border-white/20"
+            >
               <img
                 src="/src/assets/logo.png"
                 alt="C-Route Logo"
                 className="w-full h-full object-contain"
               />
-            </div>
+            </motion.div>
             <div>
-              <div className="tracking-[0.15em] font-black text-lg">
+              <div className="tracking-[0.2em] font-black text-lg md:text-2xl text-white">
                 C-ROUTE
               </div>
-              <div className="text-[9px] text-[#1A73E8] font-bold">
-                LOGISTICS SYSTEM
+              <div className="text-[10px] md:text-xs text-[#4285F4] font-black tracking-[0.3em] uppercase">
+                Enterprise Logistics
               </div>
             </div>
           </div>
         </div>
 
         {/* Hero Copy */}
-        <div className="relative z-10">
-          <h1 className="text-3xl md:text-5xl font-black leading-tight mb-4">
-            البنية التشغيلية <br />
-            <span className="text-white/40">لاسلاسل الإمداد</span>
+        <div className="relative z-10 mb-12 xl:mb-0">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest mb-6"
+          >
+            <Sparkles className="w-3 h-3" />
+            <span>Next-Gen Supply Chain</span>
+          </motion.div>
+          <h1 className="text-3xl md:text-6xl font-black leading-[1.1] mb-6">
+            مستقبل <br />
+            <span className="text-white/30">الإمداد الذكي</span>
           </h1>
-          <p className="text-white/50 text-sm max-w-sm font-medium leading-relaxed">
-            منظومة تقنية تُوحّد سلاسل الإمداد: شحنٌ ذكي، تسوياتٌ فورية، وتمويلٌ
-            تشغيلي.
+          <p className="text-white/60 text-sm md:text-lg max-w-sm font-medium leading-relaxed">
+            منصة متكاملة لإدارة التدفقات النقدية واللوجستية في بيئة تقنية موحدة.
           </p>
         </div>
 
         {/* Stats Strip */}
-        <div className="relative z-10 grid grid-cols-3 xl:grid-cols-1 gap-3 xl:gap-4 mt-4 xl:mt-0">
-          {trust.map((t) => {
+        <div className="relative z-10 grid grid-cols-1 gap-4 xl:max-w-xs">
+          {trust.map((t, idx) => {
             const Icon = t.icon;
             return (
-              <div
+              <motion.div
                 key={t.label}
-                className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.05] transition-colors"
               >
-                <Icon className="w-4 h-4 text-[#1A73E8]" />
-                <div className="overflow-hidden">
-                  <div className="text-sm xl:text-xl font-bold truncate">
-                    {t.value}
-                  </div>
-                  <div className="text-[10px] text-white/40 font-bold truncate uppercase">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                  <Icon className="w-5 h-5 text-[#4285F4]" />
+                </div>
+                <div>
+                  <div className="text-lg xl:text-2xl font-black">{t.value}</div>
+                  <div className="text-[10px] text-white/30 font-black uppercase tracking-tighter">
                     {t.label}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -226,30 +242,33 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         LEFT PANEL: ACTIONS (Fixed 100vh)
         ================================================================
       */}
-      <div className="relative w-full xl:w-[60%] h-[65vh] xl:h-screen bg-white xl:rounded-r-[2.5rem] p-6 md:p-10 lg:p-12 flex flex-col justify-between overflow-hidden shadow-2xl">
+      <div className="relative w-full xl:w-[62%] min-h-[60vh] xl:h-screen bg-slate-50 xl:rounded-r-[3rem] p-8 md:p-12 lg:p-16 flex flex-col justify-between shadow-[-50px_0_100px_rgba(0,0,0,0.3)] z-20 overflow-y-auto">
         {/* Upper Nav */}
-        <div className="flex items-center justify-between mb-6 xl:mb-0">
-          <h2 className="text-[#0B1B3B] text-xl xl:text-2xl font-black">
-            اختر صفتك للدخول
-          </h2>
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            <h2 className="text-[#0B1B3B] text-2xl xl:text-4xl font-black tracking-tight mb-2">
+              بوابات الوصول
+            </h2>
+            <p className="text-slate-400 text-sm font-bold">اختر نوع الحساب لبدء الجلسة</p>
+          </div>
 
-          <div className="flex items-center p-1 bg-slate-100 rounded-full">
+          <div className="flex items-center p-1.5 bg-slate-200/50 rounded-2xl border border-slate-200">
             <button
               onClick={() => setMode("user")}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all duration-300 ${
                 mode === "user"
-                  ? "bg-[#1A73E8] text-white shadow-md"
-                  : "text-slate-500"
+                  ? "bg-white text-[#1A73E8] shadow-xl shadow-blue-900/10"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               التشغيل
             </button>
             <button
               onClick={() => setMode("investor")}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all duration-300 ${
                 mode === "investor"
-                  ? "bg-[#0B1B3B] text-white shadow-md"
-                  : "text-slate-500"
+                  ? "bg-[#0B1B3B] text-white shadow-xl shadow-slate-900/20"
+                  : "text-slate-500 hover:text-slate-700"
               }`}
             >
               المستثمر
@@ -258,77 +277,74 @@ export default function RoleSelection({ onSelectRole }: RoleSelectionProps) {
         </div>
 
         {/* Roles Grid - Responsive Flex */}
-        <div className="flex-1 flex flex-col justify-center gap-3 xl:gap-4">
-          {roles.map((role) => {
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-6 py-6">
+          {roles.map((role, idx) => {
             const Icon = role.icon;
             const isPrimary = role.primary;
             return (
               <motion.button
                 key={role.id}
                 onClick={() => handleEnter(role.id)}
-                whileHover={{ x: -8 }}
-                className={`group relative flex items-center gap-4 p-4 xl:p-6 rounded-2xl border transition-all duration-300 ${
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                whileHover={{ y: -10, scale: 1.02 }}
+                className={`group relative flex flex-col items-start gap-6 p-8 rounded-[2.5rem] border-2 transition-all duration-500 ${
                   isPrimary
-                    ? "border-[#1A73E8]/20 bg-blue-50/10 shadow-sm hover:border-[#1A73E8]"
-                    : "border-slate-100 hover:border-slate-300"
+                    ? "border-[#1A73E8]/20 bg-white shadow-[0_30px_60px_rgba(26,115,232,0.08)] hover:border-[#1A73E8]"
+                    : "border-transparent bg-white shadow-[0_20px_40px_rgba(0,0,0,0.03)] hover:border-slate-200"
                 }`}
               >
                 <div
-                  className={`w-12 h-12 xl:w-16 xl:h-16 shrink-0 rounded-xl flex items-center justify-center transition-colors ${
+                  className={`w-16 h-16 shrink-0 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-lg ${
                     isPrimary
-                      ? "bg-[#1A73E8] text-white"
+                      ? "bg-[#1A73E8] text-white shadow-blue-500/30"
                       : "bg-slate-100 text-slate-400 group-hover:bg-[#0B1B3B] group-hover:text-white"
                   }`}
                 >
-                  <Icon className="w-6 h-6 xl:w-8 xl:h-8" strokeWidth={1.5} />
+                  <Icon className="w-8 h-8" strokeWidth={2} />
                 </div>
 
-                <div className="flex-1 text-right">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[#0B1B3B] font-bold xl:text-lg">
+                <div className="flex-1 text-right w-full">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[#0B1B3B] font-black text-xl xl:text-2xl">
                       {role.title}
                     </span>
                     {isPrimary && (
-                      <span className="bg-blue-100 text-[#1A73E8] text-[9px] px-1.5 py-0.5 rounded font-black">
-                        أساسي
+                      <span className="bg-blue-50 text-[#1A73E8] text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest">
+                        Most Active
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] xl:text-xs text-slate-500 font-medium leading-tight line-clamp-1 xl:line-clamp-none">
+                  <p className="text-sm text-slate-500 font-bold leading-relaxed mb-6">
                     {role.description}
                   </p>
-                </div>
-
-                {/* Status/Investor Info */}
-                <div className="hidden sm:flex items-center gap-4 border-r border-slate-100 pr-4">
-                  <AnimatePresence mode="wait">
-                    {mode === "investor" ? (
-                      <motion.div
-                        key="inv"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="text-left"
-                        dir="ltr"
-                      >
-                        <div className="text-[9px] text-[#1A73E8] font-bold">
-                          {role.investor.metric}
+                  
+                  <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-auto">
+                    <AnimatePresence mode="wait">
+                      {mode === "investor" ? (
+                        <motion.div
+                          key="inv"
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="text-left"
+                          dir="ltr"
+                        >
+                          <div className="text-[10px] text-[#1A73E8] font-black uppercase tracking-widest mb-1">
+                            {role.investor.metric}
+                          </div>
+                          <div className="text-xl font-black text-[#0B1B3B]">
+                            {role.investor.value}
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-[#1A73E8] font-black text-sm uppercase tracking-wider group-hover:gap-4 transition-all">
+                          <span>{role.cta}</span>
+                          <ArrowLeft className="w-5 h-5" />
                         </div>
-                        <div className="text-sm xl:text-lg font-black text-[#0B1B3B]">
-                          {role.investor.value}
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="usr"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex items-center gap-2 text-[#1A73E8] font-bold text-xs"
-                      >
-                        <span>{role.cta}</span>
-                        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </motion.button>
             );

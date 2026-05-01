@@ -124,12 +124,12 @@ export default function ShipmentsTab({ shipments, incomingOrders, onAcceptOrder,
                   <td className="px-4 py-4 text-slate-500 text-sm">{new Date(shipment.created_at).toLocaleDateString('ar-YE')}</td>
                   <td className="px-4 py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      shipment.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                      shipment.status === 'completed' || shipment.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
                       shipment.status === 'in_transit' ? 'bg-blue-100 text-blue-700' :
                       'bg-amber-100 text-amber-700'
                     }`}>
-                      {shipment.status === 'completed' ? 'مكتملة' : 
-                       shipment.status === 'in_transit' ? 'في الطريق' : 'قيد التجهيز'}
+                      {shipment.status === 'completed' || shipment.status === 'delivered' ? 'تم التسليم والتحصيل' : 
+                       shipment.status === 'in_transit' ? 'في الطريق للعميل' : 'جاهزة / بانتظار السائق'}
                     </span>
                   </td>
                   <td className="px-4 py-4 font-semibold text-slate-800">{shipment.total_amount.toLocaleString('ar-YE')} ر.ي</td>

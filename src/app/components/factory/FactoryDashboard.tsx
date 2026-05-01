@@ -386,7 +386,6 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
     { id: "products", label: "إدارة المخزون", icon: Package },
     { id: "shipments", label: "الطلبات والشحنات", icon: Truck },
     { id: "map", label: "رادار الشحنات", icon: Globe },
-    { id: "market", label: "السوق والانتشار", icon: TrendingUp },
     { id: "wallet", label: "المحفظة والتسويات", icon: Wallet },
   ];
 
@@ -423,14 +422,14 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-sm transition-all duration-300 relative group ${
                   isActive
-                    ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-900/40 font-bold translate-x-1"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
+                    ? "bg-white/10 text-white shadow-lg font-bold translate-x-1"
+                    : "text-white/50 hover:text-white hover:bg-white/5"
                 }`}
               >
                 <div className={`transition-transform duration-300 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`}>
                   <Icon
                     className={`w-5 h-5 ${
-                      isActive ? "text-white" : "text-white/40"
+                      isActive ? "text-blue-400" : "text-white/30"
                     }`}
                   />
                 </div>
@@ -537,7 +536,7 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
               )}
 
               {activeTab === "analytics" && (
-                <AnalyticsTab kpis={analyticsKpis} />
+                <AnalyticsTab factory={factory} kpis={analyticsKpis} />
               )}
 
               {activeTab === "wallet" && (
@@ -552,9 +551,6 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
                 <FactoryMapTab shipments={shipments} />
               )}
 
-              {activeTab === "market" && (
-                <FactoryMarketMap factory={factory} />
-              )}
             </AnimatePresence>
           )}
         </div>

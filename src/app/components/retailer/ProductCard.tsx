@@ -41,18 +41,7 @@ export default function ProductCard({ product, onAddToCart }: ProductCardProps) 
         
         {/* Badges Overlay */}
         <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
-          {discount > 0 && (
-            <div className="bg-orange-500 text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1 animate-bounce">
-              <Flame className="w-3 h-3" />
-              <span>-{discount}% خصم مسار</span>
-            </div>
-          )}
-          {instant && (
-            <div className="bg-[#1A73E8] text-white text-[10px] font-black px-2.5 py-1 rounded-lg shadow-lg flex items-center gap-1">
-              <Zap className="w-3 h-3" />
-              <span>تسوية فورية</span>
-            </div>
-          )}
+          {/* Badges hidden per user request for cleaner UI */}
         </div>
       </div>
 

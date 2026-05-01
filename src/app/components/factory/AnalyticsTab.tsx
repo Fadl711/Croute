@@ -7,7 +7,8 @@ import {
   AreaChart, Area, BarChart, Bar, RadialBarChart, RadialBar, PieChart, Pie,
   Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid
 } from 'recharts';
-import SupplyChainIntel from './SupplyChainIntel';
+import FactoryMarketMap from './FactoryMarketMap';
+import type { Factory } from '../../../lib/supabase';
 import { revenueSeries, productMix, topProducts, geoData, activityFeed, alerts } from './constants';
 
 function KpiCard({
@@ -59,6 +60,7 @@ function Legend2({ dot, label }: { dot: string; label: string }) {
 }
 
 interface AnalyticsTabProps {
+  factory: Factory | null;
   kpis: {
     netRevenue: number;
     deliveredShipments: number;
@@ -66,7 +68,7 @@ interface AnalyticsTabProps {
   };
 }
 
-export default function AnalyticsTab({ kpis }: AnalyticsTabProps) {
+export default function AnalyticsTab({ factory, kpis }: AnalyticsTabProps) {
   return (
     <motion.div
       key="analytics"
@@ -148,8 +150,14 @@ export default function AnalyticsTab({ kpis }: AnalyticsTabProps) {
         />
       </div>
 
-      {/* Supply Chain & Market Intelligence */}
-      <SupplyChainIntel />
+      {/* Market Intelligence Map */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6">
+        <div className="flex items-center gap-2 mb-6">
+          <MapPin className="w-5 h-5 text-blue-600" />
+          <h3 className="text-lg font-black text-[#0B1B3B]">خريطة الانتشار والطلب الفعلي</h3>
+        </div>
+        <FactoryMarketMap factory={factory} /> 
+      </div>
 
       {/* Revenue trend + Mix */}
       <div className="grid grid-cols-12 gap-4">
