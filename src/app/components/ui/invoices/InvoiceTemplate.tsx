@@ -107,9 +107,9 @@ export const InvoiceTemplate = React.forwardRef<
       {/* --- HEADER SECTION --- */}
       <div className="flex justify-between items-start border-b-[3px] border-black pb-8 mb-12">
         <div className="flex items-center gap-8">
-          <div className="w-24 h-24 bg-white border-2 border-black flex items-center justify-center p-2">
+          <div className="w-28 h-28 bg-white border-2 border-black flex items-center justify-center p-2">
             <img
-              src="/src/assets/logo.png"
+              src="/logo.png"
               alt="Logo"
               className="w-full h-full object-contain"
             />

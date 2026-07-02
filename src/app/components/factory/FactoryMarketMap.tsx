@@ -201,8 +201,8 @@ export default function FactoryMarketMap({ factory }: FactoryMarketMapProps) {
               className: 'factory-glow',
               html: `<div class="relative">
                 <div class="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20 scale-150"></div>
-                <div class="w-10 h-10 bg-white rounded-2xl flex items-center justify-center shadow-lg border-2 border-blue-600">
-                  <img src="/src/assets/logo.png" class="w-6 h-6 object-contain" />
+                <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg border-2 border-blue-600">
+                  <img src="/logo.png" class="w-8 h-8 object-contain" />
                 </div>
               </div>`
             })} />
@@ -270,7 +270,7 @@ export default function FactoryMarketMap({ factory }: FactoryMarketMapProps) {
 
       <style>{`
         .leaflet-container { background: #f8fafc !important; }
-        .factory-glow { width: 40px !important; height: 40px !important; }
+        .factory-glow { width: 48px !important; height: 48px !important; }
         .retailer-node { width: 24px !important; height: 24px !important; }
         .blur-xl { filter: blur(15px); }
         .custom-popup .leaflet-popup-content-wrapper {

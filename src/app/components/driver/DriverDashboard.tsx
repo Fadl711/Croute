@@ -91,8 +91,8 @@ export default function DriverDashboard({ onBack }: DriverDashboardProps) {
             </button>
             <div className="h-8 w-px bg-slate-200" />
             <div className="flex items-center gap-3">
-               <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20 p-2">
-                  <img src="/src/assets/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
+               <div className="w-16 h-16 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20 p-1.5">
+                  <img src="/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
                </div>
                <span className="text-xl font-black text-[#0B1B3B] tracking-tight">C-ROUTE <span className="text-amber-500">DRIVER</span></span>
             </div>

@@ -399,8 +399,8 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
         <div className="p-8 border-b border-white/5 relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <h1 className="text-xl font-black flex items-center gap-4 relative z-10">
-            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-900/40 border border-white/10 group-hover:rotate-12 transition-transform duration-500 p-3">
-              <img src="/src/assets/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
+            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-blue-900/40 border border-white/10 group-hover:rotate-12 transition-transform duration-500 p-2.5">
+              <img src="/logo.png" alt="C-Route Logo" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
               <span className="text-white tracking-tight leading-none">C-ROUTE</span>
