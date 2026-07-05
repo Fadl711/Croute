@@ -7,6 +7,7 @@ import {
   Globe,
   ChevronLeft,
   TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { toast } from "sonner";
@@ -482,10 +483,10 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <div className="text-sm font-semibold text-slate-900">
-                {factory?.name || "جاري التحميل..."}
+                {factory?.name || (isInitialLoading ? "جاري التحميل..." : "فشل الاتصال")}
               </div>
-              <div className="text-xs text-emerald-600 font-medium">
-                متصل ومفعل
+              <div className={`text-xs font-medium ${factory ? "text-emerald-600" : "text-rose-600"}`}>
+                {factory ? "متصل ومفعل" : "غير متصل (Supabase Paused)"}
               </div>
             </div>
             <div className="w-10 h-10 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center text-slate-500 font-bold">
@@ -496,6 +497,18 @@ export default function FactoryDashboard({ onBack }: FactoryDashboardProps) {
 
         {/* Tab Content */}
         <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
+          {!isInitialLoading && !factory && (
+            <div className="bg-amber-50 border-r-4 border-amber-500 p-6 rounded-2xl mb-8 flex items-start gap-4 shadow-sm" dir="rtl">
+              <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-amber-800 font-black text-sm mb-1">فشل الاتصال بقاعدة البيانات (Supabase)</h3>
+                <p className="text-amber-700 text-xs font-semibold leading-relaxed">
+                  لم نتمكن من الاتصال بالخادم. يرجى التحقق من أن مشروع قاعدة البيانات الخاص بك على منصة Supabase نشط وغير مؤقت (Active / Not Paused). 
+                  إذا كان المشروع مؤقتاً، يرجى تسجيل الدخول إلى لوحة تحكم Supabase والضغط على "Resume Project" لتنشيطه.
+                </p>
+              </div>
+            </div>
+          )}
           {isInitialLoading ? (
             <div className="space-y-8 animate-pulse">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

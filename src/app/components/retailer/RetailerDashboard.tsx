@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import {
   LayoutDashboard, ShoppingBag, History, Wallet as WalletIcon,
   Bell, User, Settings, LogOut, Search,
-  Menu, X, Sparkles, Filter, TrendingUp, CheckCircle
+  Menu, X, Sparkles, Filter, TrendingUp, CheckCircle, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useMarketplace } from '../../../hooks/useMarketplace';
@@ -50,6 +50,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
   const activeRetailerId = useMemo(() => getActiveRetailerId(), []);
   const { 
     retailer,
+    loading: creditLoading,
     orders = [], 
     creditHistory = [], 
     creditAvailable = 0, 
@@ -60,6 +61,7 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
     refreshOrders,
     refreshCredit
   } = useCreditScore(activeRetailerId);
+  const connectionFailed = !creditLoading && !retailer;
   const creditUsed = retailer?.credit_used || 0;
   const [cart, setCart] = useState<CartItem[]>([]);
 
@@ -226,12 +228,10 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
             <div className="flex items-center gap-3 pl-2">
               <div className="text-left hidden sm:block text-right">
                 <div className="text-xs font-black text-slate-900 uppercase">
-                  {retailer?.name || "تحميل..."}
+                  {retailer?.name || (creditLoading ? "تحميل..." : "فشل الاتصال")}
                 </div>
-                <div className="text-[10px] text-[#1A73E8] font-bold">
-                  {retailer?.credit_score && retailer.credit_score > 80
-                    ? "تاجر بلاتيني"
-                    : "تاجر ذهبي"}
+                <div className={`text-[10px] font-bold ${retailer ? "text-[#1A73E8]" : "text-rose-600"}`}>
+                  {retailer ? (retailer.credit_score > 80 ? "تاجر بلاتيني" : "تاجر ذهبي") : "غير متصل (Supabase Paused)"}
                 </div>
               </div>
               <button className="w-10 h-10 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center hover:ring-4 hover:ring-blue-50 transition-all">
@@ -247,6 +247,18 @@ export default function RetailerDashboard({ onBack }: RetailerDashboardProps) {
 
       {/* Main Content */}
       <main className="max-w-[1600px] mx-auto px-6 py-8">
+        {connectionFailed && (
+          <div className="bg-amber-50 border-r-4 border-amber-500 p-6 rounded-2xl mb-8 flex items-start gap-4 shadow-sm" dir="rtl">
+            <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <h3 className="text-amber-800 font-black text-sm mb-1">فشل الاتصال بقاعدة البيانات (Supabase)</h3>
+              <p className="text-amber-700 text-xs font-semibold leading-relaxed">
+                لم نتمكن من الاتصال بالخادم. يرجى التحقق من أن مشروع قاعدة البيانات الخاص بك على منصة Supabase نشط وغير مؤقت (Active / Not Paused). 
+                إذا كان المشروع مؤقتاً، يرجى تسجيل الدخول إلى لوحة تشغيل Supabase والضغط على "Resume Project" لتنشيطه.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="flex flex-col gap-8">
           <div className="flex-1">
             <AnimatePresence mode="wait">
