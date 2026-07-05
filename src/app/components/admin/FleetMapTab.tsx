@@ -47,12 +47,13 @@ const ROUTE_COLORS = [
 
 function MapAutoFit({ coords }: { coords: [number, number][] }) {
   const map = useMap();
+  const coordsStr = JSON.stringify(coords);
   useEffect(() => {
     if (coords.length > 0) {
       const bounds = L.latLngBounds(coords);
       map.fitBounds(bounds, { padding: [60, 60], maxZoom: 9 });
     }
-  }, [coords, map]);
+  }, [coordsStr, map]);
   return null;
 }
 

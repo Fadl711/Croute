@@ -50,12 +50,13 @@ const SIMULATED_RETAILERS = [
 
 function MapAutoFit({ coords }: { coords: [number, number][] }) {
   const map = useMap();
+  const coordsStr = JSON.stringify(coords);
   useEffect(() => {
     if (coords.length > 0) {
       const bounds = L.latLngBounds(coords);
       map.fitBounds(bounds, { padding: [100, 100], maxZoom: 10 });
     }
-  }, [coords, map]);
+  }, [coordsStr, map]);
   return null;
 }
 

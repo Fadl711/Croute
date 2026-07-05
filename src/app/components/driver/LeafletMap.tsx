@@ -46,12 +46,13 @@ interface LeafletMapProps {
 
 function MapAutoFit({ coords }: { coords: [number, number][] }) {
   const map = useMap();
+  const coordsStr = JSON.stringify(coords);
   useEffect(() => {
     if (coords.length > 0) {
       const bounds = L.latLngBounds(coords);
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
     }
-  }, [coords, map]);
+  }, [coordsStr, map]);
   return null;
 }
 
